@@ -1,0 +1,191 @@
+body {
+    background-color: #e0e5ec;
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.container {
+    background-color: #e0e5ec;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 9px 9px 16px #a3b1c6, -9px -9px 16px #ffffff;
+    text-align: center;
+}
+
+h1 {
+    color: #3b3b3b;
+    margin-bottom: 40px;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 40px;
+}
+
+.control {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+label {
+    margin-bottom: 20px;
+    color: #5f5f5f;
+}
+
+.knob, .slider {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    width: 150px;
+}
+
+/* For Knob-like appearance, we'd typically use a library or more complex CSS/SVG,
+   but for this example, we'll style the range inputs in a neomorphic way. */
+input[type='range'] {
+    -webkit-appearance: none;
+    background: #e0e5ec;
+    border-radius: 10px;
+    box-shadow: inset 5px 5px 10px #a3b1c6, inset -5px -5px 10px #ffffff;
+    height: 20px;
+}
+
+input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 30px;
+    height: 30px;
+    background: #e0e5ec;
+    border-radius: 50%;
+    box-shadow: 5px 5px 10px #a3b1c6, -5px -5px 10px #ffffff;
+    border: none;
+}
+
+.knob-wrapper {
+  border-radius: 50%;
+  box-shadow: 9px 9px 16px #a3b1c6, -9px -9px 16px #ffffff;
+  padding: 10px;
+  display: inline-block;
+}
+
+.knob-wrapper:active {
+  box-shadow: inset 9px 9px 16px #a3b1c6, inset -9px -9px 16px #ffffff;
+}
+
+.slider-control {
+    margin-bottom: 40px;
+}
+
+.io-controls button, .io-controls input[type="file"]::-webkit-file-upload-button {
+    border: none;
+    outline: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    background-color: #e0e5ec;
+    box-shadow: 9px 9px 16px #a3b1c6, -9px -9px 16px #ffffff;
+    color: #3b3b3b;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 10px;
+    transition: all 0.3s ease-in-out;
+}
+
+.io-controls button:active, .io-controls input[type="file"]::-webkit-file-upload-button:active {
+    box-shadow: inset 9px 9px 16px #a3b1c6, inset -9px -9px 16px #ffffff;
+}
+
+#audio-player {
+    width: 100%;
+    margin-top: 20px;
+    box-shadow: 9px 9px 16px #a3b1c6, -9px -9px 16px #ffffff;
+    border-radius: 10px;
+}
+
+span {
+    margin-top: 10px;
+    color: #5f5f5f;
+    font-family: monospace;
+    font-size: 1.2em;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: #e0e5ec;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 9px 9px 16px #a3b1c6, -9px -9px 16px #ffffff;
+    text-align: center;
+    width: 300px;
+}
+
+#auth-form input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 20px;
+    border: none;
+    border-radius: 10px;
+    background-color: #e0e5ec;
+    box-shadow: inset 5px 5px 10px #a3b1c6, inset -5px -5px 10px #ffffff;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+#auth-form button {
+    border: none;
+    outline: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    background-color: #e0e5ec;
+    box-shadow: 9px 9px 16px #a3b1c6, -9px -9px 16px #ffffff;
+    color: #3b3b3b;
+    font-size: 16px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.3s ease-in-out;
+}
+
+#auth-form button:active {
+    box-shadow: inset 9px 9px 16px #a3b1c6, inset -9px -9px 16px #ffffff;
+}
+
+#auth-switch-text {
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+#auth-switch-link {
+    color: #3b3b3b;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+/* Disabled Styles */
+input:disabled,
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.knob-wrapper.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
