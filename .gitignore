@@ -97,3 +97,7 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+
+# Backup files
+*-old.css
+*-old.js
