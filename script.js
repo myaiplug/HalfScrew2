@@ -6,20 +6,54 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Add disabled class to file input label
+    const fileInputLabel = document.getElementById('file-input-label');
+    const fileInput = document.getElementById('file-input');
+    if (fileInput.disabled) {
+        fileInputLabel.classList.add('disabled');
+    }
+
     const timeShiftKnob = document.getElementById('time-shift');
     const timeShiftValue = document.getElementById('time-shift-value');
     const pitchBendKnob = document.getElementById('pitch-bend');
     const pitchBendValue = document.getElementById('pitch-bend-value');
     const wetDryMixSlider = document.getElementById('wet-dry-mix');
     const wetDryMixValue = document.getElementById('wet-dry-mix-value');
-    const fileInput = document.getElementById('file-input');
     const playButton = document.getElementById('play-button');
     const downloadButton = document.getElementById('download-button');
     const audioPlayer = document.getElementById('audio-player');
+    const statusIndicator = document.getElementById('status-indicator');
+    const canvas = document.getElementById('audio-visualizer');
+    const canvasCtx = canvas.getContext('2d');
 
     let player;
     let pitchShift;
     let wetDry;
+    let analyser;
+    let animationId;
+
+    // Set canvas size
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+
+    // Update status indicator
+    function updateStatus(status) {
+        statusIndicator.className = '';
+        switch(status) {
+            case 'ready':
+                statusIndicator.textContent = 'Ready';
+                statusIndicator.className = 'status-ready';
+                break;
+            case 'playing':
+                statusIndicator.textContent = 'Playing';
+                statusIndicator.className = 'status-playing';
+                break;
+            case 'processing':
+                statusIndicator.textContent = 'Processing...';
+                statusIndicator.className = 'status-processing';
+                break;
+        }
+    }
 
     // Initialize Tone.js components
     pitchShift = new Tone.PitchShift({
@@ -29,6 +63,49 @@ document.addEventListener('DOMContentLoaded', () => {
     wetDry = new Tone.Gain(0.5).connect(pitchShift);
 
     const dryGain = new Tone.Gain(0.5).toDestination();
+
+    // Initialize analyser for visualization
+    analyser = new Tone.Analyser('waveform', 512);
+    pitchShift.connect(analyser);
+
+    // Visualizer function
+    function drawVisualizer() {
+        if (!analyser) return;
+        
+        animationId = requestAnimationFrame(drawVisualizer);
+        
+        const bufferLength = analyser.size;
+        const dataArray = analyser.getValue();
+        
+        canvasCtx.fillStyle = '#f7fafc';
+        canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        canvasCtx.lineWidth = 2;
+        canvasCtx.strokeStyle = '#4a9eff';
+        canvasCtx.beginPath();
+        
+        const sliceWidth = canvas.width / bufferLength;
+        let x = 0;
+        
+        for (let i = 0; i < bufferLength; i++) {
+            const v = (dataArray[i] + 1) / 2; // Normalize to 0-1
+            const y = v * canvas.height;
+            
+            if (i === 0) {
+                canvasCtx.moveTo(x, y);
+            } else {
+                canvasCtx.lineTo(x, y);
+            }
+            
+            x += sliceWidth;
+        }
+        
+        canvasCtx.lineTo(canvas.width, canvas.height / 2);
+        canvasCtx.stroke();
+    }
+
+    // Start visualizer
+    drawVisualizer();
 
     // UI Updates
     const updateAudio = () => {
@@ -45,8 +122,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Combine the two pitch values
         pitchShift.pitch = userPitchBend + timeStretchPitchCorrection;
 
-        timeShiftValue.textContent = timeShiftKnob.value;
-        pitchBendValue.textContent = pitchBendKnob.value;
+        timeShiftValue.innerHTML = `${timeShiftKnob.value}<span class="unit">%</span>`;
+        pitchBendValue.innerHTML = `${pitchBendKnob.value}<span class="unit">st</span>`;
     };
 
     timeShiftKnob.addEventListener('input', updateAudio);
@@ -58,13 +135,15 @@ document.addEventListener('DOMContentLoaded', () => {
             wetDry.gain.value = mix;
             dryGain.gain.value = 1 - mix;
         }
-        wetDryMixValue.textContent = e.target.value;
+        const percentage = Math.round(e.target.value * 100);
+        wetDryMixValue.innerHTML = `${percentage}<span class="unit">%</span>`;
     });
 
     // Audio Loading
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
+            updateStatus('processing');
             const url = URL.createObjectURL(file);
             if (player) {
                 player.dispose();
@@ -73,19 +152,22 @@ document.addEventListener('DOMContentLoaded', () => {
             if (Tone.Transport.state !== 'stopped') {
                 Tone.Transport.stop();
                 Tone.Transport.position = 0;
-                playButton.textContent = 'Play';
+                playButton.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
             }
 
             player = new Tone.Player(url, () => {
                 playButton.disabled = false;
                 downloadButton.disabled = false;
                 player.sync().start(0);
+                updateStatus('ready');
             });
 
             player.connect(dryGain);
             player.connect(wetDry);
 
-            audioPlayer.src = url;
+            if (audioPlayer) {
+                audioPlayer.src = url;
+            }
         }
     });
 
@@ -98,10 +180,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (Tone.Transport.state !== 'started') {
                 Tone.Transport.start();
-                playButton.textContent = 'Pause';
+                playButton.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
+                updateStatus('playing');
             } else {
                 Tone.Transport.pause();
-                playButton.textContent = 'Play';
+                playButton.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                updateStatus('ready');
             }
         }
     });
@@ -111,7 +195,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!player || !player.loaded) return;
 
         downloadButton.disabled = true;
-        downloadButton.textContent = 'Processing...';
+        downloadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Processing...</span>';
+        updateStatus('processing');
 
         try {
             const buffer = await Tone.Offline(async (offline) => {
@@ -156,7 +241,8 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Sorry, there was an error processing the audio.");
         } finally {
             downloadButton.disabled = false;
-            downloadButton.textContent = 'Download';
+            downloadButton.innerHTML = '<i class="fas fa-download"></i><span>Download</span>';
+            updateStatus('ready');
         }
     });
 
@@ -245,6 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pitchBendKnob.disabled = false;
         wetDryMixSlider.disabled = false;
         fileInput.disabled = false;
+        fileInputLabel.classList.remove('disabled');
         playButton.disabled = false;
         // The download button is enabled once a file is loaded.
 
