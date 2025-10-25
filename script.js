@@ -205,6 +205,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // LUFS Normalization (Spotify standard is -14 LUFS)
+    // Note: This is a simplified approximation. True LUFS measurement requires
+    // K-weighting filters and gating. This uses RMS as a basic loudness estimate.
+    const MIN_RMS_THRESHOLD = 0.0001; // Prevent division by zero
     const applyLUFSNormalization = () => {
         if (!player || !player.buffer) return;
         
@@ -222,11 +225,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const rms = Math.sqrt(sumSquares / sampleCount);
-        const targetRMS = 0.1; // Approximation for -14 LUFS
-        const gainAdjustment = targetRMS / (rms + 0.0001); // Avoid division by zero
+        // Target RMS approximation for -14 LUFS (simplified approach)
+        const targetRMS = 0.1;
+        const gainAdjustment = targetRMS / (rms + MIN_RMS_THRESHOLD);
         
-        // Apply gain to the player
-        player.volume.value = 20 * Math.log10(Math.min(gainAdjustment, 2)); // Cap at +6dB
+        // Apply gain to the player (capped at +6dB to prevent clipping)
+        player.volume.value = 20 * Math.log10(Math.min(gainAdjustment, 2));
     };
 
     lufsNormalizeCheckbox.addEventListener('change', () => {
