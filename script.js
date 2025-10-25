@@ -21,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const wetDryMixValue = document.getElementById('wet-dry-mix-value');
     const playButton = document.getElementById('play-button');
     const downloadButton = document.getElementById('download-button');
-    const audioPlayer = document.getElementById('audio-player');
     const statusIndicator = document.getElementById('status-indicator');
     const canvas = document.getElementById('audio-visualizer');
     const canvasCtx = canvas.getContext('2d');
@@ -122,8 +121,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Combine the two pitch values
         pitchShift.pitch = userPitchBend + timeStretchPitchCorrection;
 
-        timeShiftValue.innerHTML = `${timeShiftKnob.value}<span class="unit">%</span>`;
-        pitchBendValue.innerHTML = `${pitchBendKnob.value}<span class="unit">st</span>`;
+        // Update display values safely
+        timeShiftValue.textContent = timeShiftKnob.value;
+        const timeUnit = timeShiftValue.querySelector('.unit');
+        if (timeUnit) timeUnit.textContent = '%';
+        
+        pitchBendValue.textContent = pitchBendKnob.value;
+        const pitchUnit = pitchBendValue.querySelector('.unit');
+        if (pitchUnit) pitchUnit.textContent = 'st';
     };
 
     timeShiftKnob.addEventListener('input', updateAudio);
@@ -136,7 +141,9 @@ document.addEventListener('DOMContentLoaded', () => {
             dryGain.gain.value = 1 - mix;
         }
         const percentage = Math.round(e.target.value * 100);
-        wetDryMixValue.innerHTML = `${percentage}<span class="unit">%</span>`;
+        wetDryMixValue.textContent = percentage;
+        const wetUnit = wetDryMixValue.querySelector('.unit');
+        if (wetUnit) wetUnit.textContent = '%';
     });
 
     // Audio Loading
@@ -164,10 +171,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             player.connect(dryGain);
             player.connect(wetDry);
-
-            if (audioPlayer) {
-                audioPlayer.src = url;
-            }
         }
     });
 
@@ -315,11 +318,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isLoginMode) {
             modalTitle.textContent = 'Login';
             authSubmitButton.textContent = 'Login';
-            authSwitchText.innerHTML = 'Don\'t have an account? <a href="#" id="auth-switch-link">Sign Up</a>';
+            // Safely create the switch text
+            authSwitchText.textContent = "Don't have an account? ";
+            const signUpLink = document.createElement('a');
+            signUpLink.href = '#';
+            signUpLink.id = 'auth-switch-link';
+            signUpLink.textContent = 'Sign Up';
+            authSwitchText.appendChild(signUpLink);
         } else {
             modalTitle.textContent = 'Sign Up';
             authSubmitButton.textContent = 'Sign Up';
-            authSwitchText.innerHTML = 'Already have an account? <a href="#" id="auth-switch-link">Login</a>';
+            // Safely create the switch text
+            authSwitchText.textContent = 'Already have an account? ';
+            const loginLink = document.createElement('a');
+            loginLink.href = '#';
+            loginLink.id = 'auth-switch-link';
+            loginLink.textContent = 'Login';
+            authSwitchText.appendChild(loginLink);
         }
         document.getElementById('auth-switch-link').addEventListener('click', switchAuthMode);
     };
