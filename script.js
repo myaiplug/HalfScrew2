@@ -63,6 +63,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const rewindBtn = document.getElementById('rewind-btn');
     const downloadBtn = document.getElementById('download-drawer-btn');
     
+    // Cache knob indicators for performance
+    const timeShiftIndicator = document.querySelector('#time-shift + .knob-indicator');
+    const pitchBendIndicator = document.querySelector('#pitch-bend + .knob-indicator');
+    
+    // Knob rotation constants
+    const KNOB_ROTATION_RANGE = 270;
+    const KNOB_CENTER_OFFSET = 135;
+    const KNOB_TRANSFORM_ORIGIN = 'center 125px';
+    
     let player;
     let pitchShift;
     let isPlaying = false;
@@ -180,21 +189,18 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Update knob position indicators
     function updateKnobIndicators() {
-        const timeShiftIndicator = timeShiftKnob.parentElement.querySelector('.knob-indicator');
-        const pitchBendIndicator = pitchBendKnob.parentElement.querySelector('.knob-indicator');
-        
         if (timeShiftIndicator) {
             const timeShiftPercent = (timeShiftKnob.value - timeShiftKnob.min) / (timeShiftKnob.max - timeShiftKnob.min);
-            const timeShiftAngle = (timeShiftPercent * 270) - 135; // -135 to +135 degrees
+            const timeShiftAngle = (timeShiftPercent * KNOB_ROTATION_RANGE) - KNOB_CENTER_OFFSET;
             timeShiftIndicator.style.transform = `translateX(-50%) rotate(${timeShiftAngle}deg)`;
-            timeShiftIndicator.style.transformOrigin = 'center 125px';
+            timeShiftIndicator.style.transformOrigin = KNOB_TRANSFORM_ORIGIN;
         }
         
         if (pitchBendIndicator) {
             const pitchBendPercent = (pitchBendKnob.value - pitchBendKnob.min) / (pitchBendKnob.max - pitchBendKnob.min);
-            const pitchBendAngle = (pitchBendPercent * 270) - 135; // -135 to +135 degrees
+            const pitchBendAngle = (pitchBendPercent * KNOB_ROTATION_RANGE) - KNOB_CENTER_OFFSET;
             pitchBendIndicator.style.transform = `translateX(-50%) rotate(${pitchBendAngle}deg)`;
-            pitchBendIndicator.style.transformOrigin = 'center 125px';
+            pitchBendIndicator.style.transformOrigin = KNOB_TRANSFORM_ORIGIN;
         }
     }
     

@@ -372,8 +372,8 @@ body:not([data-theme="dark"]) .theme-toggle:hover {
             var(--text-color) 9deg
         );
     opacity: 0.15;
-    mask: radial-gradient(circle, transparent 65%, black 65%, black 80%, transparent 80%);
     -webkit-mask: radial-gradient(circle, transparent 65%, black 65%, black 80%, transparent 80%);
+    mask: radial-gradient(circle, transparent 65%, black 65%, black 80%, transparent 80%);
 }
 
 /* Inner knob circle */
