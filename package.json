@@ -1,0 +1,30 @@
+{
+  "name": "halfscrew-audio-plugin",
+  "version": "1.0.0",
+  "description": "A premium audio time-stretching and pitch-shifting plugin for the web",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "dev": "python3 -m http.server 8080"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/myaiplug/HalfScrew2.git"
+  },
+  "keywords": [
+    "audio",
+    "plugin",
+    "time-stretch",
+    "pitch-shift",
+    "web-audio",
+    "tone.js"
+  ],
+  "author": "myaiplug",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/myaiplug/HalfScrew2/issues"
+  },
+  "homepage": "https://github.com/myaiplug/HalfScrew2#readme",
+  "dependencies": {},
+  "devDependencies": {}
+}

@@ -3,32 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premium Professional Studio Interface</title>
+    <title>HalfScrew - Premium Audio Time-Stretch & Pitch-Shift Plugin</title>
+    <meta name="description" content="Professional web-based audio plugin for time-stretching and pitch-shifting. Change speed without affecting pitch, or adjust pitch independently. Real-time processing with beautiful UI.">
+    <meta name="keywords" content="audio plugin, time stretch, pitch shift, audio processing, web audio, tone.js, audio editor">
+    <meta name="author" content="myaiplug">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://myaiplug.github.io/HalfScrew2/">
+    <meta property="og:title" content="HalfScrew - Premium Audio Time-Stretch & Pitch-Shift Plugin">
+    <meta property="og:description" content="Professional web-based audio plugin for time-stretching and pitch-shifting. Change speed without affecting pitch, or adjust pitch independently.">
+    <meta property="og:image" content="https://github.com/user-attachments/assets/392f95b3-95f2-43d6-a5c6-5eed15be92ee">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://myaiplug.github.io/HalfScrew2/">
+    <meta property="twitter:title" content="HalfScrew - Premium Audio Time-Stretch & Pitch-Shift Plugin">
+    <meta property="twitter:description" content="Professional web-based audio plugin for time-stretching and pitch-shifting. Change speed without affecting pitch, or adjust pitch independently.">
+    <meta property="twitter:image" content="https://github.com/user-attachments/assets/392f95b3-95f2-43d6-a5c6-5eed15be92ee">
+    
+    <!-- Favicon (using emoji as data URI for now) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
+    
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
-        <h1>Studio Interface</h1>
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-wave-square"></i>
+            </div>
+            <h1>HalfScrew</h1>
+            <div class="version">v1.0</div>
+        </div>
+        <div class="status-bar">
+            <span id="status-indicator" class="status-ready">Ready</span>
+        </div>
         <div class="controls">
             <div class="control">
                 <label for="time-shift">Time Shift</label>
-                <div class="knob-wrapper">
+                <div class="knob-wrapper"> HalfScrew
                     <input type="range" id="time-shift" min="50" max="200" value="100" class="input-knob" data-diameter="80" data-bgcolor="#e0e5ec" data-fgcolor="#a3b1c6" disabled>
                 </div>
                 <span id="time-shift-value">100%</span>
-            </div>
+                    <input type="range" id="time-shift" min="50" max="150" value="100" class="input-knob" data-diameter="80" data-bgcolor="#e0e5ec" data-fgcolor="#4a9eff" disabled>
+                </div>
+                <span id="time-shift-value" class="value-display">100<span class="unit">%</span></span>HalfScrew
+           </div>
             <div class="control">
                 <label for="pitch-bend">Pitch Bend</label>
                 <div class="knob-wrapper">
+            copilot/add-web-audio-api-features
                     <input type="range" id="pitch-bend" min="-12" max="12" value="0" step="0.1" class="input-knob" data-diameter="80" data-bgcolor="#e0e5ec" data-fgcolor="#a3b1c6" disabled>
                 </div>
-                <span id="pitch-bend-value">0st</span>
+              <span id="pitch-bend-value">0st</span>
+                    <input type="range" id="pitch-bend" min="-6" max="6" value="0" step="0.1" class="input-knob" data-diameter="80" data-bgcolor="#e0e5ec" data-fgcolor="#4a9eff" disabled>
+                </div>
+                <span id="pitch-bend-value" class="value-display">0<span class="unit">st</span></span>
             </div>
         </div>
         <div class="slider-control">
             <label for="wet-dry-mix">Wet/Dry Mix</label>
-            <input type="range" id="wet-dry-mix" min="0" max="1" value="0.5" step="0.01" class="slider" disabled>
-            <span id="wet-dry-mix-value">0.5</span>
+            <div class="slider-container">
+                <span class="slider-label">Dry</span>
+                <input type="range" id="wet-dry-mix" min="0" max="1" value="0.5" step="0.01" class="slider" disabled>
+                <span class="slider-label">Wet</span>
+            </div>
+            <span id="wet-dry-mix-value" class="value-display">50<span class="unit">%</span></span>
         </div>
         <div class="checkbox-controls">
             <label>
@@ -41,12 +83,34 @@
             </label>
         </div>
         <div class="io-controls">
+copilot/add-web-audio-api-features
             <input type="file" id="file-input" accept="audio/mp3,audio/wav,audio/mpeg,audio/x-wav" disabled>
             <button id="play-button" disabled>Play</button>
             <button id="download-button" disabled>Download</button>
             <button id="presets-button" disabled>Presets</button>
             <button id="login-button">Login</button>
+
+            <label for="file-input" class="file-input-label" id="file-input-label">
+                <i class="fas fa-folder-open"></i>
+                <span>Choose File</span>
+                <input type="file" id="file-input" accept="audio/mp3, audio/wav" disabled>
+            </label>
+            <button id="play-button" disabled>
+                <i class="fas fa-play"></i>
+                <span>Play</span>
+            </button>
+            <button id="download-button" disabled>
+                <i class="fas fa-download"></i>
+                <span>Download</span>
+            </button>
+            <button id="login-button">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Login</span>
+            </button>
         </div>
+        <div class="visualizer">
+            <canvas id="audio-visualizer"></canvas>HalfScrew
+      </div>
         <audio id="audio-player" controls></audio>
     </div>
 

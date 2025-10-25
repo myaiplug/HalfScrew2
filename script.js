@@ -6,17 +6,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Add disabled class to file input label
+    const fileInputLabel = document.getElementById('file-input-label');
+    const fileInput = document.getElementById('file-input');
+    if (fileInput.disabled) {
+        fileInputLabel.classList.add('disabled');
+    }
+
     const timeShiftKnob = document.getElementById('time-shift');
     const timeShiftValue = document.getElementById('time-shift-value');
     const pitchBendKnob = document.getElementById('pitch-bend');
     const pitchBendValue = document.getElementById('pitch-bend-value');
     const wetDryMixSlider = document.getElementById('wet-dry-mix');
     const wetDryMixValue = document.getElementById('wet-dry-mix-value');
-    const fileInput = document.getElementById('file-input');
     const playButton = document.getElementById('play-button');
     const downloadButton = document.getElementById('download-button');
     const presetsButton = document.getElementById('presets-button');
     const audioPlayer = document.getElementById('audio-player');
+    const statusIndicator = document.getElementById('status-indicator');
+    const canvas = document.getElementById('audio-visualizer');
+    const canvasCtx = canvas.getContext('2d');
 
     // EQ Controls
     const eqEnableCheckbox = document.getElementById('eq-enable');
@@ -53,6 +62,33 @@ document.addEventListener('DOMContentLoaded', () => {
             pitch: 0
         });
 
+    let analyser;
+    let animationId;
+
+    // Set canvas size
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+
+    // Update status indicator
+    function updateStatus(status) {
+        statusIndicator.className = '';
+        switch(status) {
+            case 'ready':
+                statusIndicator.textContent = 'Ready';
+                statusIndicator.className = 'status-ready';
+                break;
+            case 'playing':
+                statusIndicator.textContent = 'Playing';
+                statusIndicator.className = 'status-playing';
+                break;
+            case 'processing':
+                statusIndicator.textContent = 'Processing...';
+                statusIndicator.className = 'status-processing';
+                break;
+        }
+    }
+
+
         // EQ nodes
         lowShelf = new Tone.EQ3({
             low: 0,
@@ -74,7 +110,54 @@ document.addEventListener('DOMContentLoaded', () => {
         dryGain = new Tone.Gain(0.5).toDestination();
     }
 
+
     // UI Updates with smoothing
+
+    // Initialize analyser for visualization
+    analyser = new Tone.Analyser('waveform', 512);
+    pitchShift.connect(analyser);
+
+    // Visualizer function
+    function drawVisualizer() {
+        if (!analyser) return;
+        
+        animationId = requestAnimationFrame(drawVisualizer);
+        
+        const bufferLength = analyser.size;
+        const dataArray = analyser.getValue();
+        
+        canvasCtx.fillStyle = '#f7fafc';
+        canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        canvasCtx.lineWidth = 2;
+        canvasCtx.strokeStyle = '#4a9eff';
+        canvasCtx.beginPath();
+        
+        const sliceWidth = canvas.width / bufferLength;
+        let x = 0;
+        
+        for (let i = 0; i < bufferLength; i++) {
+            const v = (dataArray[i] + 1) / 2; // Normalize to 0-1
+            const y = v * canvas.height;
+            
+            if (i === 0) {
+                canvasCtx.moveTo(x, y);
+            } else {
+                canvasCtx.lineTo(x, y);
+            }
+            
+            x += sliceWidth;
+        }
+        
+        canvasCtx.lineTo(canvas.width, canvas.height / 2);
+        canvasCtx.stroke();
+    }
+
+    // Start visualizer
+    drawVisualizer();
+
+    // UI Updates
+
     const updateAudio = () => {
         if (!player || !pitchShift) return;
 
@@ -92,6 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (pitchShift) {
             pitchShift.pitch = targetPitch;
         }
+
 
         timeShiftValue.textContent = timeShiftKnob.value + '%';
         pitchBendValue.textContent = parseFloat(pitchBendKnob.value).toFixed(1) + 'st';
@@ -119,6 +203,16 @@ document.addEventListener('DOMContentLoaded', () => {
             lowShelf.mid.value = midGain;
             lowShelf.high.value = highGain;
         }
+
+        // Update display values safely
+        timeShiftValue.textContent = timeShiftKnob.value;
+        const timeUnit = timeShiftValue.querySelector('.unit');
+        if (timeUnit) timeUnit.textContent = '%';
+        
+        pitchBendValue.textContent = pitchBendKnob.value;
+        const pitchUnit = pitchBendValue.querySelector('.unit');
+        if (pitchUnit) pitchUnit.textContent = 'st';
+
     };
 
     timeShiftKnob.addEventListener('input', updateAudio);
@@ -139,7 +233,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 dryGain.gain.value = 1 - mix;
             }
         }
-        wetDryMixValue.textContent = e.target.value;
+        const percentage = Math.round(e.target.value * 100);
+        wetDryMixValue.textContent = percentage;
+        const wetUnit = wetDryMixValue.querySelector('.unit');
+        if (wetUnit) wetUnit.textContent = '%';
     });
 
     // Secure audio file validation
@@ -164,6 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
+
             // Validate file
             if (!validateAudioFile(file)) {
                 e.target.value = ''; // Clear the input
@@ -175,6 +273,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+
+            updateStatus('processing');
+
             const url = URL.createObjectURL(file);
             if (player) {
                 player.dispose();
@@ -183,24 +284,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (Tone.Transport.state !== 'stopped') {
                 Tone.Transport.stop();
                 Tone.Transport.position = 0;
-                playButton.textContent = 'Play';
+                playButton.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
             }
 
             player = new Tone.Player(url, () => {
                 playButton.disabled = false;
                 downloadButton.disabled = false;
                 player.sync().start(0);
+
                 
                 // Apply LUFS normalization if enabled
                 if (lufsNormalizeCheckbox.checked) {
                     applyLUFSNormalization();
                 }
+
+                updateStatus('ready');
+
             });
 
             player.connect(dryGain);
             player.connect(wetDry);
-
-            audioPlayer.src = url;
         }
     });
 
@@ -254,10 +357,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (Tone.Transport.state !== 'started') {
                 Tone.Transport.start();
-                playButton.textContent = 'Pause';
+                playButton.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
+                updateStatus('playing');
             } else {
                 Tone.Transport.pause();
-                playButton.textContent = 'Play';
+                playButton.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                updateStatus('ready');
             }
         }
     });
@@ -267,7 +372,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!player || !player.loaded) return;
 
         downloadButton.disabled = true;
-        downloadButton.textContent = 'Processing...';
+        downloadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Processing...</span>';
+        updateStatus('processing');
 
         try {
             const buffer = await Tone.Offline(async (offline) => {
@@ -327,7 +433,8 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Sorry, there was an error processing the audio.");
         } finally {
             downloadButton.disabled = false;
-            downloadButton.textContent = 'Download';
+            downloadButton.innerHTML = '<i class="fas fa-download"></i><span>Download</span>';
+            updateStatus('ready');
         }
     });
 
@@ -525,11 +632,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isLoginMode) {
             modalTitle.textContent = 'Login';
             authSubmitButton.textContent = 'Login';
-            authSwitchText.innerHTML = 'Don\'t have an account? <a href="#" id="auth-switch-link">Sign Up</a>';
+            // Safely create the switch text
+            authSwitchText.textContent = "Don't have an account? ";
+            const signUpLink = document.createElement('a');
+            signUpLink.href = '#';
+            signUpLink.id = 'auth-switch-link';
+            signUpLink.textContent = 'Sign Up';
+            authSwitchText.appendChild(signUpLink);
         } else {
             modalTitle.textContent = 'Sign Up';
             authSubmitButton.textContent = 'Sign Up';
-            authSwitchText.innerHTML = 'Already have an account? <a href="#" id="auth-switch-link">Login</a>';
+            // Safely create the switch text
+            authSwitchText.textContent = 'Already have an account? ';
+            const loginLink = document.createElement('a');
+            loginLink.href = '#';
+            loginLink.id = 'auth-switch-link';
+            loginLink.textContent = 'Login';
+            authSwitchText.appendChild(loginLink);
         }
         document.getElementById('auth-switch-link').addEventListener('click', switchAuthMode);
     };
@@ -541,6 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pitchBendKnob.disabled = false;
         wetDryMixSlider.disabled = false;
         fileInput.disabled = false;
+        fileInputLabel.classList.remove('disabled');
         playButton.disabled = false;
         presetsButton.disabled = false;
         eqEnableCheckbox.disabled = false;
