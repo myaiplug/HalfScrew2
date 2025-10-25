@@ -74,25 +74,42 @@
         </div>
         <div class="controls">
             <div class="control">
-                <label for="time-shift">SPEED</label>
-                <div class="knob-wrapper">
-                    <input type="range" id="time-shift" min="50" max="150" value="100" class="input-knob" data-diameter="120" data-bgcolor="#e0e5ec" data-fgcolor="#a855f7" disabled>
+                <div class="knob-container">
+                    <div class="knob-labels">
+                        <span class="knob-label-left">75%</span>
+                        <span class="knob-label-top">100%</span>
+                        <span class="knob-label-right">125%</span>
+                    </div>
+                    <label for="time-shift">SPEED</label>
+                    <div class="knob-wrapper">
+                        <input type="range" id="time-shift" min="50" max="150" value="100" class="input-knob" data-diameter="120" data-bgcolor="#e0e5ec" data-fgcolor="#a855f7" disabled>
+                        <div class="knob-indicator"></div>
+                    </div>
+                    <span id="time-shift-value" class="value-display">100<span class="unit">%</span></span>
                 </div>
-                <span id="time-shift-value" class="value-display">100<span class="unit">%</span></span>
             </div>
             <div class="control cassette-icon">
                 <i class="fas fa-tape"></i>
             </div>
             <div class="control">
-                <label for="pitch-bend">PITCH</label>
-                <div class="knob-wrapper">
-                    <input type="range" id="pitch-bend" min="-6" max="6" value="0" step="0.1" class="input-knob" data-diameter="120" data-bgcolor="#e0e5ec" data-fgcolor="#a855f7" disabled>
+                <div class="knob-container">
+                    <div class="knob-labels">
+                        <span class="knob-label-left">-6</span>
+                        <span class="knob-label-top">0</span>
+                        <span class="knob-label-right">+6</span>
+                    </div>
+                    <label for="pitch-bend">PITCH</label>
+                    <div class="knob-wrapper">
+                        <input type="range" id="pitch-bend" min="-6" max="6" value="0" step="0.1" class="input-knob" data-diameter="120" data-bgcolor="#e0e5ec" data-fgcolor="#a855f7" disabled>
+                        <div class="knob-indicator"></div>
+                    </div>
+                    <span id="pitch-bend-value" class="value-display">0.0<span class="unit"> st</span></span>
                 </div>
-                <span id="pitch-bend-value" class="value-display">0.0<span class="unit"> st</span></span>
             </div>
         </div>
         <input type="file" id="file-input" accept="audio/mp3,audio/wav,audio/mpeg,audio/x-wav" style="display: none;">
         <audio id="audio-player" style="display: none;"></audio>
+        <div class="controls-indicator">CONTROLS ›</div>
     </div>
 
     <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>

@@ -184,6 +184,7 @@ body:not([data-theme="dark"]) .theme-toggle:hover {
 
 /* Main Container */
 .container {
+    position: relative;
     background: var(--container-bg);
     padding: 60px 80px;
     border-radius: 40px;
@@ -303,6 +304,41 @@ body:not([data-theme="dark"]) .theme-toggle:hover {
     text-transform: uppercase;
 }
 
+/* Knob Container and Labels */
+.knob-container {
+    position: relative;
+}
+
+.knob-labels {
+    position: absolute;
+    top: 35px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75em;
+    color: var(--text-color);
+    opacity: 0.5;
+    z-index: 0;
+}
+
+.knob-label-left {
+    position: absolute;
+    left: 0;
+}
+
+.knob-label-top {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.knob-label-right {
+    position: absolute;
+    right: 0;
+}
+
 /* Knob Styling */
 .knob-wrapper {
     position: relative;
@@ -320,20 +356,27 @@ body:not([data-theme="dark"]) .theme-toggle:hover {
     margin-bottom: 20px;
 }
 
+/* Knob tick marks */
 .knob-wrapper::before {
     content: '';
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 120px;
-    height: 120px;
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--knob-shadow-light) 0%, var(--knob-shadow-dark) 100%);
-    box-shadow: inset 4px 4px 8px var(--knob-shadow-dark),
-                inset -4px -4px 8px var(--knob-shadow-light);
+    background-image: 
+        repeating-conic-gradient(
+            from 0deg,
+            transparent 0deg,
+            transparent 8deg,
+            var(--text-color) 8deg,
+            var(--text-color) 9deg
+        );
+    opacity: 0.15;
+    mask: radial-gradient(circle, transparent 65%, black 65%, black 80%, transparent 80%);
+    -webkit-mask: radial-gradient(circle, transparent 65%, black 65%, black 80%, transparent 80%);
 }
 
+/* Inner knob circle */
 .knob-wrapper::after {
     content: '';
     position: absolute;
@@ -345,6 +388,7 @@ body:not([data-theme="dark"]) .theme-toggle:hover {
     border-radius: 50%;
     background: radial-gradient(circle at 30% 30%, var(--knob-shadow-light), var(--knob-bg) 60%, var(--knob-shadow-dark));
     z-index: 1;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
 
 .input-knob {
@@ -354,6 +398,21 @@ body:not([data-theme="dark"]) .theme-toggle:hover {
     opacity: 0;
     cursor: pointer;
     z-index: 2;
+}
+
+/* Knob position indicator */
+.knob-indicator {
+    position: absolute;
+    top: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 25px;
+    background: var(--accent-color);
+    border-radius: 2px;
+    z-index: 2;
+    pointer-events: none;
+    transition: transform 0.1s ease;
 }
 
 .value-display {
@@ -373,6 +432,19 @@ body:not([data-theme="dark"]) .theme-toggle:hover {
 /* Disabled state */
 .control:has(.input-knob:disabled) {
     opacity: 0.4;
+}
+
+/* Controls Indicator */
+.controls-indicator {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    font-size: 0.9em;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--text-color);
+    opacity: 0.6;
+    cursor: default;
 }
 
 /* Responsive Design */

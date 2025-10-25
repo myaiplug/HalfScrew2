@@ -173,7 +173,33 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update UI
         timeShiftValue.innerHTML = `${timeShiftKnob.value}<span class="unit">%</span>`;
         pitchBendValue.innerHTML = `${parseFloat(pitchBendKnob.value).toFixed(1)}<span class="unit"> st</span>`;
+        
+        // Update knob indicators
+        updateKnobIndicators();
     }
+    
+    // Update knob position indicators
+    function updateKnobIndicators() {
+        const timeShiftIndicator = timeShiftKnob.parentElement.querySelector('.knob-indicator');
+        const pitchBendIndicator = pitchBendKnob.parentElement.querySelector('.knob-indicator');
+        
+        if (timeShiftIndicator) {
+            const timeShiftPercent = (timeShiftKnob.value - timeShiftKnob.min) / (timeShiftKnob.max - timeShiftKnob.min);
+            const timeShiftAngle = (timeShiftPercent * 270) - 135; // -135 to +135 degrees
+            timeShiftIndicator.style.transform = `translateX(-50%) rotate(${timeShiftAngle}deg)`;
+            timeShiftIndicator.style.transformOrigin = 'center 125px';
+        }
+        
+        if (pitchBendIndicator) {
+            const pitchBendPercent = (pitchBendKnob.value - pitchBendKnob.min) / (pitchBendKnob.max - pitchBendKnob.min);
+            const pitchBendAngle = (pitchBendPercent * 270) - 135; // -135 to +135 degrees
+            pitchBendIndicator.style.transform = `translateX(-50%) rotate(${pitchBendAngle}deg)`;
+            pitchBendIndicator.style.transformOrigin = 'center 125px';
+        }
+    }
+    
+    // Initialize indicators on load
+    updateKnobIndicators();
     
     // Play/Pause control
     playPauseBtn.addEventListener('click', () => {
