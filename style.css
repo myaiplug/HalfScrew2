@@ -357,6 +357,83 @@ button:disabled:hover,
     cursor: not-allowed;
 }
 
+
+/* Checkbox Controls */
+.checkbox-controls {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.checkbox-controls label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    margin: 0;
+}
+
+.checkbox-controls input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+/* EQ Modal Styles */
+.eq-modal-content {
+    width: 500px;
+    max-width: 90vw;
+}
+
+.eq-controls {
+    display: flex;
+    justify-content: space-around;
+    margin: 30px 0;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* Presets Modal Styles */
+.presets-modal-content {
+    width: 400px;
+    max-width: 90vw;
+}
+
+.presets-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.preset-button {
+    border: none;
+    outline: none;
+    padding: 15px 20px;
+    border-radius: 10px;
+    background-color: #e0e5ec;
+    box-shadow: 5px 5px 10px #a3b1c6, -5px -5px 10px #ffffff;
+    color: #3b3b3b;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.preset-button:hover {
+    box-shadow: 7px 7px 12px #a3b1c6, -7px -7px 12px #ffffff;
+}
+
+.preset-button:active {
+    box-shadow: inset 5px 5px 10px #a3b1c6, inset -5px -5px 10px #ffffff;
+}
+
+#eq-close-button,
+#presets-close-button {
+    margin-top: 20px;
+    width: 100%;
+
 .knob-wrapper.disabled:hover::before {
     opacity: 0;
 }

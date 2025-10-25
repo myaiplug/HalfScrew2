@@ -21,13 +21,47 @@ document.addEventListener('DOMContentLoaded', () => {
     const wetDryMixValue = document.getElementById('wet-dry-mix-value');
     const playButton = document.getElementById('play-button');
     const downloadButton = document.getElementById('download-button');
+    const presetsButton = document.getElementById('presets-button');
+    const audioPlayer = document.getElementById('audio-player');
     const statusIndicator = document.getElementById('status-indicator');
     const canvas = document.getElementById('audio-visualizer');
     const canvasCtx = canvas.getContext('2d');
 
+    // EQ Controls
+    const eqEnableCheckbox = document.getElementById('eq-enable');
+    const lufsNormalizeCheckbox = document.getElementById('lufs-normalize');
+    const lowEqKnob = document.getElementById('low-eq');
+    const lowEqValue = document.getElementById('low-eq-value');
+    const midEqKnob = document.getElementById('mid-eq');
+    const midEqValue = document.getElementById('mid-eq-value');
+    const highEqKnob = document.getElementById('high-eq');
+    const highEqValue = document.getElementById('high-eq-value');
+
     let player;
     let pitchShift;
     let wetDry;
+    let dryGain;
+    let lowShelf, midBand, highShelf;
+    let limiter;
+    
+    // Smoothing parameters for knob changes
+    const smoothingTime = 0.05; // 50ms smoothing to prevent artifacts
+
+    // Check if Tone.js is available
+    if (typeof Tone === 'undefined') {
+        console.warn('Tone.js not loaded. Audio processing will be unavailable.');
+        // Show a warning to user
+        const warning = document.createElement('div');
+        warning.style.cssText = 'position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #ff9800; color: white; padding: 10px 20px; border-radius: 5px; z-index: 10000;';
+        warning.textContent = 'Audio library not loaded. Some features may not work.';
+        document.body.appendChild(warning);
+        setTimeout(() => warning.remove(), 5000);
+    } else {
+        // Initialize Tone.js components
+        pitchShift = new Tone.PitchShift({
+            pitch: 0
+        });
+
     let analyser;
     let animationId;
 
@@ -54,14 +88,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Initialize Tone.js components
-    pitchShift = new Tone.PitchShift({
-        pitch: 0
-    }).toDestination();
 
-    wetDry = new Tone.Gain(0.5).connect(pitchShift);
+        // EQ nodes
+        lowShelf = new Tone.EQ3({
+            low: 0,
+            mid: 0,
+            high: 0,
+            lowFrequency: 400,
+            highFrequency: 2500
+        });
 
-    const dryGain = new Tone.Gain(0.5).toDestination();
+        // Limiter for LUFS normalization
+        limiter = new Tone.Limiter(-1);
+
+        // Audio chain: pitchShift -> lowShelf -> limiter -> destination
+        pitchShift.connect(lowShelf);
+        lowShelf.connect(limiter);
+        limiter.toDestination();
+
+        wetDry = new Tone.Gain(0.5).connect(pitchShift);
+        dryGain = new Tone.Gain(0.5).toDestination();
+    }
+
+
+    // UI Updates with smoothing
 
     // Initialize analyser for visualization
     analyser = new Tone.Analyser('waveform', 512);
@@ -107,6 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
     drawVisualizer();
 
     // UI Updates
+
     const updateAudio = () => {
         if (!player || !pitchShift) return;
 
@@ -115,11 +166,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Compensate for pitch change from playback rate to achieve time-stretching
         const timeStretchPitchCorrection = -12 * Math.log2(playbackRate);
-
         const userPitchBend = parseFloat(pitchBendKnob.value);
 
-        // Combine the two pitch values
-        pitchShift.pitch = userPitchBend + timeStretchPitchCorrection;
+        // Combine the two pitch values with smoothing
+        const targetPitch = userPitchBend + timeStretchPitchCorrection;
+        if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+            pitchShift.pitch.linearRampToValueAtTime(targetPitch, Tone.context.currentTime + smoothingTime);
+        } else if (pitchShift) {
+            pitchShift.pitch = targetPitch;
+        }
+
+
+        timeShiftValue.textContent = timeShiftKnob.value + '%';
+        pitchBendValue.textContent = parseFloat(pitchBendKnob.value).toFixed(1) + 'st';
+    };
+
+    const updateEQ = () => {
+        const lowGain = parseFloat(lowEqKnob.value);
+        const midGain = parseFloat(midEqKnob.value);
+        const highGain = parseFloat(highEqKnob.value);
+
+        // Update UI text
+        lowEqValue.textContent = lowGain.toFixed(1) + ' dB';
+        midEqValue.textContent = midGain.toFixed(1) + ' dB';
+        highEqValue.textContent = highGain.toFixed(1) + ' dB';
+
+        // Update audio if available
+        if (!lowShelf) return;
+
+        if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+            lowShelf.low.linearRampToValueAtTime(lowGain, Tone.context.currentTime + smoothingTime);
+            lowShelf.mid.linearRampToValueAtTime(midGain, Tone.context.currentTime + smoothingTime);
+            lowShelf.high.linearRampToValueAtTime(highGain, Tone.context.currentTime + smoothingTime);
+        } else {
+            lowShelf.low.value = lowGain;
+            lowShelf.mid.value = midGain;
+            lowShelf.high.value = highGain;
+        }
 
         // Update display values safely
         timeShiftValue.textContent = timeShiftKnob.value;
@@ -129,16 +212,26 @@ document.addEventListener('DOMContentLoaded', () => {
         pitchBendValue.textContent = pitchBendKnob.value;
         const pitchUnit = pitchBendValue.querySelector('.unit');
         if (pitchUnit) pitchUnit.textContent = 'st';
+
     };
 
     timeShiftKnob.addEventListener('input', updateAudio);
     pitchBendKnob.addEventListener('input', updateAudio);
 
+    lowEqKnob.addEventListener('input', updateEQ);
+    midEqKnob.addEventListener('input', updateEQ);
+    highEqKnob.addEventListener('input', updateEQ);
+
     wetDryMixSlider.addEventListener('input', (e) => {
         if (wetDry && dryGain) {
             const mix = parseFloat(e.target.value);
-            wetDry.gain.value = mix;
-            dryGain.gain.value = 1 - mix;
+            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+                wetDry.gain.linearRampToValueAtTime(mix, Tone.context.currentTime + smoothingTime);
+                dryGain.gain.linearRampToValueAtTime(1 - mix, Tone.context.currentTime + smoothingTime);
+            } else {
+                wetDry.gain.value = mix;
+                dryGain.gain.value = 1 - mix;
+            }
         }
         const percentage = Math.round(e.target.value * 100);
         wetDryMixValue.textContent = percentage;
@@ -146,11 +239,43 @@ document.addEventListener('DOMContentLoaded', () => {
         if (wetUnit) wetUnit.textContent = '%';
     });
 
-    // Audio Loading
+    // Secure audio file validation
+    const validateAudioFile = (file) => {
+        const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav'];
+        const maxSize = 100 * 1024 * 1024; // 100MB limit
+
+        if (!allowedTypes.includes(file.type)) {
+            alert('Please upload only audio files (MP3 or WAV)');
+            return false;
+        }
+
+        if (file.size > maxSize) {
+            alert('File size must be less than 100MB');
+            return false;
+        }
+
+        return true;
+    };
+
+    // Audio Loading with validation
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
+
+            // Validate file
+            if (!validateAudioFile(file)) {
+                e.target.value = ''; // Clear the input
+                return;
+            }
+
+            if (typeof Tone === 'undefined') {
+                alert('Audio processing library not loaded. Cannot process audio files.');
+                return;
+            }
+
+
             updateStatus('processing');
+
             const url = URL.createObjectURL(file);
             if (player) {
                 player.dispose();
@@ -166,7 +291,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 playButton.disabled = false;
                 downloadButton.disabled = false;
                 player.sync().start(0);
+
+                
+                // Apply LUFS normalization if enabled
+                if (lufsNormalizeCheckbox.checked) {
+                    applyLUFSNormalization();
+                }
+
                 updateStatus('ready');
+
             });
 
             player.connect(dryGain);
@@ -174,8 +307,49 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // LUFS Normalization (Spotify standard is -14 LUFS)
+    // Note: This is a simplified approximation. True LUFS measurement requires
+    // K-weighting filters and gating. This uses RMS as a basic loudness estimate.
+    const MIN_RMS_THRESHOLD = 0.0001; // Prevent division by zero
+    const applyLUFSNormalization = () => {
+        if (!player || !player.buffer) return;
+        
+        // Calculate RMS and apply normalization
+        const buffer = player.buffer;
+        let sumSquares = 0;
+        let sampleCount = 0;
+
+        for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+            const channelData = buffer.getChannelData(channel);
+            for (let i = 0; i < channelData.length; i++) {
+                sumSquares += channelData[i] * channelData[i];
+                sampleCount++;
+            }
+        }
+
+        const rms = Math.sqrt(sumSquares / sampleCount);
+        // Target RMS approximation for -14 LUFS (simplified approach)
+        const targetRMS = 0.1;
+        const gainAdjustment = targetRMS / (rms + MIN_RMS_THRESHOLD);
+        
+        // Apply gain to the player (capped at +6dB to prevent clipping)
+        player.volume.value = 20 * Math.log10(Math.min(gainAdjustment, 2));
+    };
+
+    lufsNormalizeCheckbox.addEventListener('change', () => {
+        if (lufsNormalizeCheckbox.checked && player && player.loaded) {
+            applyLUFSNormalization();
+        } else if (player) {
+            player.volume.value = 0;
+        }
+    });
+
     // Transport
     playButton.addEventListener('click', () => {
+        if (typeof Tone === 'undefined') {
+            alert('Audio processing library not loaded.');
+            return;
+        }
         if (player && player.loaded) {
             // It's good practice to resume the AudioContext on a user gesture.
             if (Tone.context.state !== 'running') {
@@ -214,10 +388,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const offlinePitchShift = new Tone.PitchShift({
                     pitch: totalPitchShift
-                }).connect(offline.destination); // Connect end of wet chain to destination
+                });
+
+                const offlineEQ = new Tone.EQ3({
+                    low: parseFloat(lowEqKnob.value),
+                    mid: parseFloat(midEqKnob.value),
+                    high: parseFloat(highEqKnob.value),
+                    lowFrequency: 400,
+                    highFrequency: 2500
+                });
+
+                const offlineLimiter = new Tone.Limiter(-1);
+
+                // Build chain
+                offlinePitchShift.connect(offlineEQ);
+                offlineEQ.connect(offlineLimiter);
+                offlineLimiter.connect(offline.destination);
 
                 const offlineWetGain = new Tone.Gain(parseFloat(wetDryMixSlider.value)).connect(offlinePitchShift);
-                const offlineDryGain = new Tone.Gain(1 - parseFloat(wetDryMixSlider.value)).connect(offline.destination); // Connect end of dry chain to destination
+                const offlineDryGain = new Tone.Gain(1 - parseFloat(wetDryMixSlider.value)).connect(offline.destination);
 
                 // Connect player to both chains
                 offlinePlayer.connect(offlineDryGain);
@@ -248,6 +437,82 @@ document.addEventListener('DOMContentLoaded', () => {
             updateStatus('ready');
         }
     });
+
+    // Presets functionality
+    const presets = {
+        'vocal-enhance': {
+            timeShift: 100,
+            pitchBend: 0,
+            lowEq: -2,
+            midEq: 3,
+            highEq: 2,
+            wetDryMix: 0.7
+        },
+        'bass-boost': {
+            timeShift: 100,
+            pitchBend: 0,
+            lowEq: 8,
+            midEq: -2,
+            highEq: 0,
+            wetDryMix: 0.5
+        },
+        'treble-boost': {
+            timeShift: 100,
+            pitchBend: 0,
+            lowEq: -2,
+            midEq: 0,
+            highEq: 8,
+            wetDryMix: 0.5
+        },
+        'radio-ready': {
+            timeShift: 100,
+            pitchBend: 0,
+            lowEq: 2,
+            midEq: 4,
+            highEq: 3,
+            wetDryMix: 0.8
+        },
+        'chipmunk': {
+            timeShift: 150,
+            pitchBend: 8,
+            lowEq: -6,
+            midEq: 2,
+            highEq: 4,
+            wetDryMix: 1.0
+        },
+        'slow-deep': {
+            timeShift: 70,
+            pitchBend: -6,
+            lowEq: 6,
+            midEq: 0,
+            highEq: -4,
+            wetDryMix: 1.0
+        },
+        'reset': {
+            timeShift: 100,
+            pitchBend: 0,
+            lowEq: 0,
+            midEq: 0,
+            highEq: 0,
+            wetDryMix: 0.5
+        }
+    };
+
+    const applyPreset = (presetName) => {
+        const preset = presets[presetName];
+        if (!preset) return;
+
+        timeShiftKnob.value = preset.timeShift;
+        pitchBendKnob.value = preset.pitchBend;
+        lowEqKnob.value = preset.lowEq;
+        midEqKnob.value = preset.midEq;
+        highEqKnob.value = preset.highEq;
+        wetDryMixSlider.value = preset.wetDryMix;
+
+        updateAudio();
+        updateEQ();
+        wetDryMixValue.textContent = preset.wetDryMix;
+    };
 
     // Helper function to convert AudioBuffer to WAV
     function bufferToWave(ch0, ch1, sampleRate) {
@@ -300,6 +565,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const authSwitchLink = document.getElementById('auth-switch-link');
     const authSwitchText = document.getElementById('auth-switch-text');
 
+    // EQ Modal
+    const eqModal = document.getElementById('eq-modal');
+    const eqCloseButton = document.getElementById('eq-close-button');
+
+    // Presets Modal
+    const presetsModal = document.getElementById('presets-modal');
+    const presetsCloseButton = document.getElementById('presets-close-button');
+
     let isLoginMode = true;
 
     loginButton.addEventListener('click', () => {
@@ -310,6 +583,47 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target === authModal) {
             authModal.style.display = 'none';
         }
+    });
+
+    // EQ Modal handlers
+    eqEnableCheckbox.addEventListener('change', () => {
+        if (eqEnableCheckbox.checked) {
+            eqModal.style.display = 'flex';
+        }
+    });
+
+    eqCloseButton.addEventListener('click', () => {
+        eqModal.style.display = 'none';
+    });
+
+    eqModal.addEventListener('click', (e) => {
+        if (e.target === eqModal) {
+            eqModal.style.display = 'none';
+        }
+    });
+
+    // Presets Modal handlers
+    presetsButton.addEventListener('click', () => {
+        presetsModal.style.display = 'flex';
+    });
+
+    presetsCloseButton.addEventListener('click', () => {
+        presetsModal.style.display = 'none';
+    });
+
+    presetsModal.addEventListener('click', (e) => {
+        if (e.target === presetsModal) {
+            presetsModal.style.display = 'none';
+        }
+    });
+
+    // Apply preset when clicked
+    document.querySelectorAll('.preset-button').forEach(button => {
+        button.addEventListener('click', () => {
+            const presetName = button.getAttribute('data-preset');
+            applyPreset(presetName);
+            presetsModal.style.display = 'none';
+        });
     });
 
     const switchAuthMode = (e) => {
@@ -348,6 +662,9 @@ document.addEventListener('DOMContentLoaded', () => {
         fileInput.disabled = false;
         fileInputLabel.classList.remove('disabled');
         playButton.disabled = false;
+        presetsButton.disabled = false;
+        eqEnableCheckbox.disabled = false;
+        lufsNormalizeCheckbox.disabled = false;
         // The download button is enabled once a file is loaded.
 
         document.querySelectorAll('.knob-wrapper.disabled').forEach(wrapper => {
