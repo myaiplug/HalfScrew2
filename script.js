@@ -1,4 +1,32 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Theme toggle functionality
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = themeToggle.querySelector('i');
+    
+    // Load saved theme from localStorage
+    const savedTheme = localStorage.getItem('halfscrew-theme') || 'light';
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-theme');
+        themeIcon.classList.remove('fa-sun');
+        themeIcon.classList.add('fa-moon');
+    }
+    
+    // Theme toggle event
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-theme');
+        const isDark = document.body.classList.contains('dark-theme');
+        
+        if (isDark) {
+            themeIcon.classList.remove('fa-sun');
+            themeIcon.classList.add('fa-moon');
+            localStorage.setItem('halfscrew-theme', 'dark');
+        } else {
+            themeIcon.classList.remove('fa-moon');
+            themeIcon.classList.add('fa-sun');
+            localStorage.setItem('halfscrew-theme', 'light');
+        }
+    });
+
     // Add disabled class to knob wrappers initially
     document.querySelectorAll('.input-knob').forEach(knob => {
         if (knob.disabled) {
@@ -20,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const wetDryMixSlider = document.getElementById('wet-dry-mix');
     const wetDryMixValue = document.getElementById('wet-dry-mix-value');
     const playButton = document.getElementById('play-button');
+    const stopButton = document.getElementById('stop-button');
     const downloadButton = document.getElementById('download-button');
     const presetsButton = document.getElementById('presets-button');
     const audioPlayer = document.getElementById('audio-player');
@@ -126,7 +155,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const bufferLength = analyser.size;
         const dataArray = analyser.getValue();
         
-        canvasCtx.fillStyle = '#f7fafc';
+        // Use theme-aware colors
+        const isDark = document.body.classList.contains('dark-theme');
+        canvasCtx.fillStyle = isDark ? '#1a202c' : '#f7fafc';
         canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
         
         canvasCtx.lineWidth = 2;
@@ -287,19 +318,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 playButton.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
             }
 
-            player = new Tone.Player(url, () => {
-                playButton.disabled = false;
-                downloadButton.disabled = false;
-                player.sync().start(0);
+            player = new Tone.Player({
+                url: url,
+                loop: false,
+                fadeIn: 0,
+                fadeOut: 0,
+                onload: () => {
+                    playButton.disabled = false;
+                    stopButton.disabled = false;
+                    downloadButton.disabled = false;
+                    player.sync().start(0);
 
-                
-                // Apply LUFS normalization if enabled
-                if (lufsNormalizeCheckbox.checked) {
-                    applyLUFSNormalization();
+                    
+                    // Apply LUFS normalization if enabled
+                    if (lufsNormalizeCheckbox.checked) {
+                        applyLUFSNormalization();
+                    }
+
+                    updateStatus('ready');
                 }
-
-                updateStatus('ready');
-
             });
 
             player.connect(dryGain);
@@ -364,6 +401,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 playButton.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
                 updateStatus('ready');
             }
+        }
+    });
+
+    // Stop button - restart from beginning
+    stopButton.addEventListener('click', () => {
+        if (typeof Tone === 'undefined') {
+            alert('Audio processing library not loaded.');
+            return;
+        }
+        if (player && player.loaded) {
+            Tone.Transport.stop();
+            Tone.Transport.position = 0;
+            playButton.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+            updateStatus('ready');
         }
     });
 
