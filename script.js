@@ -681,12 +681,38 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Drawer Toggle Functionality
+    // Accessible status message region
+    function showStatusMessage(message) {
+        let statusRegion = document.getElementById('status-message-region');
+        if (!statusRegion) {
+            statusRegion = document.createElement('div');
+            statusRegion.id = 'status-message-region';
+            statusRegion.setAttribute('role', 'status');
+            statusRegion.setAttribute('aria-live', 'polite');
+            statusRegion.style.position = 'fixed';
+            statusRegion.style.bottom = '1rem';
+            statusRegion.style.right = '1rem';
+            statusRegion.style.background = '#333';
+            statusRegion.style.color = '#fff';
+            statusRegion.style.padding = '0.75rem 1.25rem';
+            statusRegion.style.borderRadius = '0.5rem';
+            statusRegion.style.zIndex = '1000';
+            statusRegion.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+            document.body.appendChild(statusRegion);
+        }
+        statusRegion.textContent = message;
+        statusRegion.style.display = 'block';
+        setTimeout(() => {
+            statusRegion.style.display = 'none';
+        }, 3000);
+    }
+
     const drawerToggles = document.querySelectorAll('.drawer-toggle');
     drawerToggles.forEach(toggle => {
         toggle.addEventListener('click', () => {
             const position = toggle.classList.contains('drawer-toggle-left') ? 'left' :
                            toggle.classList.contains('drawer-toggle-right') ? 'right' : 'top';
-            alert(`${position.charAt(0).toUpperCase() + position.slice(1)} drawer toggle clicked! (Drawer functionality to be implemented)`);
+            showStatusMessage(`${position.charAt(0).toUpperCase() + position.slice(1)} drawer toggle clicked! (Drawer functionality to be implemented)`);
         });
     });
 });
