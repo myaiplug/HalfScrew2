@@ -30,6 +30,17 @@
 </head>
 <body>
     <div class="container">
+        <!-- Drawer Toggle Buttons -->
+        <button class="drawer-toggle drawer-toggle-left" title="Toggle Left Drawer">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+        <button class="drawer-toggle drawer-toggle-right" title="Toggle Right Drawer">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="drawer-toggle drawer-toggle-top" title="Toggle Top Drawer">
+            <i class="fas fa-chevron-down"></i>
+        </button>
+        
         <div class="header">
             <div class="logo">
                 <i class="fas fa-wave-square"></i>
@@ -43,22 +54,15 @@
         <div class="controls">
             <div class="control">
                 <label for="time-shift">Time Shift</label>
-                <div class="knob-wrapper"> HalfScrew
-                    <input type="range" id="time-shift" min="50" max="200" value="100" class="input-knob" data-diameter="80" data-bgcolor="#e0e5ec" data-fgcolor="#a3b1c6" disabled>
+                <div class="knob-wrapper">
+                    <input type="range" id="time-shift" min="50" max="150" value="100" class="input-knob" data-diameter="70" data-bgcolor="#e0e5ec" data-fgcolor="#4a9eff" disabled>
                 </div>
-                <span id="time-shift-value">100%</span>
-                    <input type="range" id="time-shift" min="50" max="150" value="100" class="input-knob" data-diameter="80" data-bgcolor="#e0e5ec" data-fgcolor="#4a9eff" disabled>
-                </div>
-                <span id="time-shift-value" class="value-display">100<span class="unit">%</span></span>HalfScrew
-           </div>
+                <span id="time-shift-value" class="value-display">100<span class="unit">%</span></span>
+            </div>
             <div class="control">
                 <label for="pitch-bend">Pitch Bend</label>
                 <div class="knob-wrapper">
-            copilot/add-web-audio-api-features
-                    <input type="range" id="pitch-bend" min="-12" max="12" value="0" step="0.1" class="input-knob" data-diameter="80" data-bgcolor="#e0e5ec" data-fgcolor="#a3b1c6" disabled>
-                </div>
-              <span id="pitch-bend-value">0st</span>
-                    <input type="range" id="pitch-bend" min="-6" max="6" value="0" step="0.1" class="input-knob" data-diameter="80" data-bgcolor="#e0e5ec" data-fgcolor="#4a9eff" disabled>
+                    <input type="range" id="pitch-bend" min="-6" max="6" value="0" step="0.1" class="input-knob" data-diameter="70" data-bgcolor="#e0e5ec" data-fgcolor="#4a9eff" disabled>
                 </div>
                 <span id="pitch-bend-value" class="value-display">0<span class="unit">st</span></span>
             </div>
@@ -83,13 +87,6 @@
             </label>
         </div>
         <div class="io-controls">
-copilot/add-web-audio-api-features
-            <input type="file" id="file-input" accept="audio/mp3,audio/wav,audio/mpeg,audio/x-wav" disabled>
-            <button id="play-button" disabled>Play</button>
-            <button id="download-button" disabled>Download</button>
-            <button id="presets-button" disabled>Presets</button>
-            <button id="login-button">Login</button>
-
             <label for="file-input" class="file-input-label" id="file-input-label">
                 <i class="fas fa-folder-open"></i>
                 <span>Choose File</span>
@@ -109,9 +106,14 @@ copilot/add-web-audio-api-features
             </button>
         </div>
         <div class="visualizer">
-            <canvas id="audio-visualizer"></canvas>HalfScrew
-      </div>
+            <canvas id="audio-visualizer"></canvas>
+        </div>
         <audio id="audio-player" controls></audio>
+    </div>
+
+    <!-- Tagline -->
+    <div class="tagline">
+        The <span class="accent">Slow</span> Motion Motion
     </div>
 
     <!-- Login/Signup Modal -->
