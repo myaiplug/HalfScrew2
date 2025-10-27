@@ -36,9 +36,9 @@ publicFiles.forEach(file => {
     const filePath = path.join(__dirname, file);
     if (fs.existsSync(filePath)) {
         if (fs.statSync(filePath).isDirectory()) {
-            app.use(`/${file}`, express.static(filePath));
+            app.use(`/${file}`, limiter, express.static(filePath));
         } else {
-            app.get(`/${file}`, (req, res) => {
+            app.get(`/${file}`, limiter, (req, res) => {
                 res.sendFile(filePath);
             });
         }
@@ -46,7 +46,7 @@ publicFiles.forEach(file => {
 });
 
 // Serve index.html at root
-app.get('/', (req, res) => {
+app.get('/', limiter, (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
