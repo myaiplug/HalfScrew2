@@ -413,6 +413,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (player && player.loaded) {
             Tone.Transport.stop();
             Tone.Transport.position = 0;
+            if (player.seek) {
+                player.seek(0);
+            }
             playButton.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
             updateStatus('ready');
         }
@@ -484,7 +487,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Sorry, there was an error processing the audio.");
         } finally {
             downloadButton.disabled = false;
-            downloadButton.innerHTML = '<i class="fas fa-download"></i><span>Download</span>';
+            downloadButton.innerHTML = '<i class="fas fa-arrow-down"></i><span>Download</span>';
             updateStatus('ready');
         }
     });

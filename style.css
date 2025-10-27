@@ -680,7 +680,7 @@ button:disabled:hover,
     }
     
     .header h1 {
-        font-size: 1.5em;
+        font-size: 1.7em;
     }
     
     .theme-toggle {
@@ -712,5 +712,30 @@ button:disabled:hover,
     
     .knob-wrapper {
         transform: scale(0.9);
+    }
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+    body,
+    .container,
+    .theme-toggle,
+    .knob-wrapper,
+    .io-controls button,
+    .file-input-label,
+    .drawer-toggle,
+    .preset-button {
+        transition: none !important;
+        animation: none !important;
+    }
+    
+    .theme-toggle:hover {
+        box-shadow: 
+            7px 7px 14px var(--knob-shadow-dark),
+            -7px -7px 14px var(--knob-shadow-light);
+    }
+    
+    .theme-toggle:hover i {
+        filter: none;
     }
 }
