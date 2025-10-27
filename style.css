@@ -368,6 +368,148 @@ span.value-display .unit {
     font-weight: bold;
 }
 
+/* Download Modal Styles */
+.download-modal-content {
+    width: 400px;
+    max-width: 90vw;
+    position: relative;
+}
+
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #718096;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    background: rgba(163, 177, 198, 0.2);
+    color: #2d3748;
+    transform: rotate(90deg);
+}
+
+.modal-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #f0f3f7, #d8dde5);
+    box-shadow: 
+        10px 10px 20px rgba(163, 177, 198, 0.5),
+        -10px -10px 20px rgba(255, 255, 255, 0.9),
+        inset 2px 2px 5px rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4a9eff;
+    font-size: 36px;
+}
+
+.download-modal-content h2 {
+    color: #2d3748;
+    margin: 10px 0;
+    font-size: 1.8em;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.modal-subtitle {
+    color: #718096;
+    margin-bottom: 25px;
+    font-size: 0.95em;
+    line-height: 1.5;
+}
+
+#download-email-form {
+    margin-top: 20px;
+}
+
+#download-email-form input {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 20px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #e8ecf1, #d0d5dd);
+    box-shadow: 
+        inset 6px 6px 12px rgba(163, 177, 198, 0.4),
+        inset -6px -6px 12px rgba(255, 255, 255, 0.7);
+    font-size: 16px;
+    box-sizing: border-box;
+    color: #2d3748;
+    transition: all 0.3s ease;
+}
+
+#download-email-form input:focus {
+    outline: none;
+    box-shadow: 
+        inset 6px 6px 12px rgba(163, 177, 198, 0.5),
+        inset -6px -6px 12px rgba(255, 255, 255, 0.8),
+        0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+#download-email-form input::placeholder {
+    color: #a0aec0;
+}
+
+#download-submit-button {
+    border: none;
+    outline: none;
+    padding: 16px 32px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #e8ecf1, #d0d5dd);
+    box-shadow: 
+        10px 10px 20px rgba(163, 177, 198, 0.5),
+        -10px -10px 20px rgba(255, 255, 255, 0.9);
+    color: #2d3748;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+#download-submit-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+        12px 12px 24px rgba(163, 177, 198, 0.6),
+        -12px -12px 24px rgba(255, 255, 255, 1),
+        0 0 15px rgba(102, 126, 234, 0.3);
+    border-color: rgba(102, 126, 234, 0.4);
+}
+
+#download-submit-button:active {
+    transform: translateY(0);
+    box-shadow: 
+        inset 10px 10px 20px rgba(163, 177, 198, 0.4),
+        inset -10px -10px 20px rgba(255, 255, 255, 0.7);
+}
+
+#download-submit-button i {
+    font-size: 18px;
+    color: #4a9eff;
+}
+
+
 /* Visualizer */
 .visualizer {
     width: 100%;

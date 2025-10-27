@@ -1,18 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Add disabled class to knob wrappers initially
-    document.querySelectorAll('.input-knob').forEach(knob => {
-        if (knob.disabled) {
-            knob.parentElement.classList.add('disabled');
-        }
-    });
-
-    // Add disabled class to file input label
-    const fileInputLabel = document.getElementById('file-input-label');
-    const fileInput = document.getElementById('file-input');
-    if (fileInput.disabled) {
-        fileInputLabel.classList.add('disabled');
-    }
-
     const timeShiftKnob = document.getElementById('time-shift');
     const timeShiftValue = document.getElementById('time-shift-value');
     const pitchBendKnob = document.getElementById('pitch-bend');
@@ -26,6 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusIndicator = document.getElementById('status-indicator');
     const canvas = document.getElementById('audio-visualizer');
     const canvasCtx = canvas.getContext('2d');
+
+    // Initialize buttons - play and download disabled until file is loaded
+    playButton.disabled = true;
+    downloadButton.disabled = true;
 
     // EQ Controls
     const eqEnableCheckbox = document.getElementById('eq-enable');
@@ -367,7 +357,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Download
+    // Download - show email modal first
+    let processedAudioBlob = null;
+    
     downloadButton.addEventListener('click', async () => {
         if (!player || !player.loaded) return;
 
@@ -418,23 +410,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }, player.buffer.duration);
 
             const wav = bufferToWave(buffer.getChannelData(0), buffer.getChannelData(1), buffer.sampleRate);
-            const blob = new Blob([new DataView(wav)], { type: 'audio/wav' });
-            const url = URL.createObjectURL(blob);
-
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'processed_audio.wav';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            processedAudioBlob = new Blob([new DataView(wav)], { type: 'audio/wav' });
+            
+            // Show email modal instead of downloading immediately
+            document.getElementById('download-modal').style.display = 'flex';
+            updateStatus('ready');
         } catch (error) {
             console.error("Error processing audio:", error);
             alert("Sorry, there was an error processing the audio.");
+            updateStatus('ready');
         } finally {
             downloadButton.disabled = false;
             downloadButton.innerHTML = '<i class="fas fa-download"></i><span>Download</span>';
-            updateStatus('ready');
         }
     });
 
@@ -655,29 +642,99 @@ document.addEventListener('DOMContentLoaded', () => {
 
     authSwitchLink.addEventListener('click', switchAuthMode);
 
-    const unlockControls = () => {
-        timeShiftKnob.disabled = false;
-        pitchBendKnob.disabled = false;
-        wetDryMixSlider.disabled = false;
-        fileInput.disabled = false;
-        fileInputLabel.classList.remove('disabled');
-        playButton.disabled = false;
-        presetsButton.disabled = false;
-        eqEnableCheckbox.disabled = false;
-        lufsNormalizeCheckbox.disabled = false;
-        // The download button is enabled once a file is loaded.
-
-        document.querySelectorAll('.knob-wrapper.disabled').forEach(wrapper => {
-            wrapper.classList.remove('disabled');
-        });
-    };
-
     authForm.addEventListener('submit', (e) => {
         e.preventDefault();
         // Backend logic would go here.
-        alert('Login successful! Controls are now unlocked.');
-        unlockControls();
+        alert('Login successful!');
         authModal.style.display = 'none';
+    });
+
+    // Download Modal Handlers
+    const downloadModal = document.getElementById('download-modal');
+    const downloadModalClose = document.getElementById('download-modal-close');
+    const downloadEmailForm = document.getElementById('download-email-form');
+    const downloadEmailInput = document.getElementById('download-email-input');
+
+    // Close download modal
+    downloadModalClose.addEventListener('click', () => {
+        downloadModal.style.display = 'none';
+        downloadEmailInput.value = '';
+    });
+
+    // Close modal when clicking outside
+    downloadModal.addEventListener('click', (e) => {
+        if (e.target === downloadModal) {
+            downloadModal.style.display = 'none';
+            downloadEmailInput.value = '';
+        }
+    });
+
+    // Handle email form submission
+    downloadEmailForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = downloadEmailInput.value.trim();
+        const submitButton = document.getElementById('download-submit-button');
+        
+        // Disable button while processing
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Submitting...</span>';
+
+        try {
+            // Save email to backend
+            const response = await fetch('http://localhost:3000/api/save-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Download the audio file
+                if (processedAudioBlob) {
+                    const url = URL.createObjectURL(processedAudioBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'processed_audio.wav';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }
+
+                // Show success message
+                showStatusMessage('Thank you! Your download will start shortly.');
+                
+                // Close modal
+                downloadModal.style.display = 'none';
+                downloadEmailInput.value = '';
+            } else {
+                alert('Failed to save email. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error saving email:', error);
+            // Still allow download even if backend fails
+            if (processedAudioBlob) {
+                const url = URL.createObjectURL(processedAudioBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'processed_audio.wav';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showStatusMessage('Download started! (Email could not be saved - please check server)');
+                downloadModal.style.display = 'none';
+                downloadEmailInput.value = '';
+            }
+        } finally {
+            submitButton.disabled = false;
+            submitButton.innerHTML = '<i class="fas fa-paper-plane"></i><span>Submit & Download</span>';
+        }
     });
 
     // Drawer Toggle Functionality
