@@ -286,7 +286,6 @@ input[type='range']::-webkit-slider-thumb {
         7px 7px 14px rgba(163, 177, 198, 0.4),
         -7px -7px 14px rgba(255, 255, 255, 0.8);
     border-radius: 10px;
-    display: none; /* Hidden by default for cleaner UI */
 }
 
 span.value-display {
