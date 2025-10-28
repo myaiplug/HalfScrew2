@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const playButton = document.getElementById('play-button');
     const downloadButton = document.getElementById('download-button');
     const presetsButton = document.getElementById('presets-button');
+    const fileInput = document.getElementById('file-input');
     const audioPlayer = document.getElementById('audio-player');
     const statusIndicator = document.getElementById('status-indicator');
     const canvas = document.getElementById('audio-visualizer');
