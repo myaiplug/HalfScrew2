@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Secure audio file validation
     const validateAudioFile = (file) => {
-        const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav'];
+        const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/x-wav'];
         const maxSize = 100 * 1024 * 1024; // 100MB limit
 
         if (!allowedTypes.includes(file.type)) {
