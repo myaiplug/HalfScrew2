@@ -1,86 +1,64 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const timeShiftKnob = document.getElementById('time-shift');
-    const timeShiftValue = document.getElementById('time-shift-value');
-    const pitchBendKnob = document.getElementById('pitch-bend');
-    const pitchBendValue = document.getElementById('pitch-bend-value');
-    const wetDryMixSlider = document.getElementById('wet-dry-mix');
-    const wetDryMixValue = document.getElementById('wet-dry-mix-value');
+    // DOM Elements - Updated for new HTML structure
+    const speedKnob = document.getElementById('speed-knob');
+    const speedValue = document.getElementById('speed-value');
+    const pitchKnob = document.getElementById('pitch-knob');
+    const pitchValue = document.getElementById('pitch-value');
+    const speedIndicator = document.querySelector('#speed-knob + .knob-indicator');
+    const pitchIndicator = document.querySelector('#pitch-knob + .knob-indicator');
+    
+    // Theme toggle
+    const themeToggle = document.getElementById('theme-toggle');
+    const body = document.body;
+    
+    // Settings modal
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsModal = document.getElementById('settings-modal');
+    const settingsClose = document.getElementById('settings-close');
+    
+    // Audio controls
+    const fileInput = document.getElementById('file-input');
     const playButton = document.getElementById('play-button');
     const downloadButton = document.getElementById('download-button');
-    const presetsButton = document.getElementById('presets-button');
-    const fileInput = document.getElementById('file-input');
-    const audioPlayer = document.getElementById('audio-player');
-    const statusIndicator = document.getElementById('status-indicator');
-    const canvas = document.getElementById('audio-visualizer');
-    const canvasCtx = canvas.getContext('2d');
-
-    // Initialize buttons - play and download disabled until file is loaded
-    playButton.disabled = true;
-    downloadButton.disabled = true;
-
-    // EQ Controls
+    
+    // Settings controls
+    const wetDryMixSlider = document.getElementById('wet-dry-mix');
+    const wetDryValue = document.getElementById('wet-dry-value');
     const eqEnableCheckbox = document.getElementById('eq-enable');
     const lufsNormalizeCheckbox = document.getElementById('lufs-normalize');
+    const eqControlsDiv = document.getElementById('eq-controls');
     const lowEqKnob = document.getElementById('low-eq');
     const lowEqValue = document.getElementById('low-eq-value');
     const midEqKnob = document.getElementById('mid-eq');
     const midEqValue = document.getElementById('mid-eq-value');
     const highEqKnob = document.getElementById('high-eq');
     const highEqValue = document.getElementById('high-eq-value');
+    
+    // Cassette icon
+    const cassetteIcon = document.getElementById('cassette-icon');
 
+    // Initialize buttons
+    if (playButton) playButton.disabled = true;
+    if (downloadButton) downloadButton.disabled = true;
+
+    // Audio engine variables (keeping existing Tone.js setup)
     let player;
     let pitchShift;
     let wetDry;
     let dryGain;
-    let lowShelf, midBand, highShelf;
+    let lowShelf;
     let limiter;
     
-    // Smoothing parameters for knob changes
-    const smoothingTime = 0.05; // 50ms smoothing to prevent artifacts
+    const smoothingTime = 0.05;
 
     // Check if Tone.js is available
     if (typeof Tone === 'undefined') {
         console.warn('Tone.js not loaded. Audio processing will be unavailable.');
-        // Show a warning to user
-        const warning = document.createElement('div');
-        warning.style.cssText = 'position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #ff9800; color: white; padding: 10px 20px; border-radius: 5px; z-index: 10000;';
-        warning.textContent = 'Audio library not loaded. Some features may not work.';
-        document.body.appendChild(warning);
-        setTimeout(() => warning.remove(), 5000);
+        showNotification('Audio library not loaded. Some features may not work.', 'warning');
     } else {
         // Initialize Tone.js components
-        pitchShift = new Tone.PitchShift({
-            pitch: 0
-        });
-
-    let analyser;
-    let animationId;
-
-    // Set canvas size
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-
-    // Update status indicator
-    function updateStatus(status) {
-        statusIndicator.className = '';
-        switch(status) {
-            case 'ready':
-                statusIndicator.textContent = 'Ready';
-                statusIndicator.className = 'status-ready';
-                break;
-            case 'playing':
-                statusIndicator.textContent = 'Playing';
-                statusIndicator.className = 'status-playing';
-                break;
-            case 'processing':
-                statusIndicator.textContent = 'Processing...';
-                statusIndicator.className = 'status-processing';
-                break;
-        }
-    }
-
-
-        // EQ nodes
+        pitchShift = new Tone.PitchShift({ pitch: 0 });
+        
         lowShelf = new Tone.EQ3({
             low: 0,
             mid: 0,
@@ -88,101 +66,133 @@ document.addEventListener('DOMContentLoaded', () => {
             lowFrequency: 400,
             highFrequency: 2500
         });
-
-        // Limiter for LUFS normalization
+        
         limiter = new Tone.Limiter(-1);
-
-        // Audio chain: pitchShift -> lowShelf -> limiter -> destination
+        
+        // Audio chain
         pitchShift.connect(lowShelf);
         lowShelf.connect(limiter);
         limiter.toDestination();
-
+        
         wetDry = new Tone.Gain(0.5).connect(pitchShift);
         dryGain = new Tone.Gain(0.5).toDestination();
     }
 
-
-    // UI Updates with smoothing
-
-    // Initialize analyser for visualization
-    analyser = new Tone.Analyser('waveform', 512);
-    pitchShift.connect(analyser);
-
-    // Visualizer function
-    function drawVisualizer() {
-        if (!analyser) return;
+    // Theme Toggle
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        body.setAttribute('data-theme', newTheme);
         
-        animationId = requestAnimationFrame(drawVisualizer);
-        
-        const bufferLength = analyser.size;
-        const dataArray = analyser.getValue();
-        
-        canvasCtx.fillStyle = '#f7fafc';
-        canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        canvasCtx.lineWidth = 2;
-        canvasCtx.strokeStyle = '#4a9eff';
-        canvasCtx.beginPath();
-        
-        const sliceWidth = canvas.width / bufferLength;
-        let x = 0;
-        
-        for (let i = 0; i < bufferLength; i++) {
-            const v = (dataArray[i] + 1) / 2; // Normalize to 0-1
-            const y = v * canvas.height;
-            
-            if (i === 0) {
-                canvasCtx.moveTo(x, y);
-            } else {
-                canvasCtx.lineTo(x, y);
-            }
-            
-            x += sliceWidth;
+        // Update icon
+        const icon = themeToggle.querySelector('i');
+        if (newTheme === 'dark') {
+            icon.classList.remove('fa-moon');
+            icon.classList.add('fa-sun');
+        } else {
+            icon.classList.remove('fa-sun');
+            icon.classList.add('fa-moon');
         }
         
-        canvasCtx.lineTo(canvas.width, canvas.height / 2);
-        canvasCtx.stroke();
+        // Save preference
+        localStorage.setItem('theme', newTheme);
+    });
+    
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    body.setAttribute('data-theme', savedTheme);
+    const icon = themeToggle.querySelector('i');
+    if (savedTheme === 'dark') {
+        icon.classList.remove('fa-moon');
+        icon.classList.add('fa-sun');
     }
 
-    // Start visualizer
-    drawVisualizer();
-
-    // UI Updates
-
-    const updateAudio = () => {
-        if (!player || !pitchShift) return;
-
-        const playbackRate = parseFloat(timeShiftKnob.value) / 100;
-        player.playbackRate = playbackRate;
-
-        // Compensate for pitch change from playback rate to achieve time-stretching
-        const timeStretchPitchCorrection = -12 * Math.log2(playbackRate);
-        const userPitchBend = parseFloat(pitchBendKnob.value);
-
-        // Combine the two pitch values with smoothing
-        const targetPitch = userPitchBend + timeStretchPitchCorrection;
-        if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
-            pitchShift.pitch.linearRampToValueAtTime(targetPitch, Tone.context.currentTime + smoothingTime);
-        } else if (pitchShift) {
-            pitchShift.pitch = targetPitch;
+    // Settings Modal
+    settingsBtn.addEventListener('click', () => {
+        settingsModal.style.display = 'flex';
+    });
+    
+    settingsClose.addEventListener('click', () => {
+        settingsModal.style.display = 'none';
+    });
+    
+    settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) {
+            settingsModal.style.display = 'none';
         }
+    });
 
+    // EQ Enable Checkbox
+    eqEnableCheckbox.addEventListener('change', () => {
+        if (eqEnableCheckbox.checked) {
+            eqControlsDiv.style.display = 'block';
+        } else {
+            eqControlsDiv.style.display = 'none';
+        }
+    });
 
-        timeShiftValue.textContent = timeShiftKnob.value + '%';
-        pitchBendValue.textContent = parseFloat(pitchBendKnob.value).toFixed(1) + 'st';
-    };
+    // Knob visualization update
+    function updateKnobIndicator(knob, indicator) {
+        if (!knob || !indicator) return;
+        
+        const min = parseFloat(knob.min);
+        const max = parseFloat(knob.max);
+        const value = parseFloat(knob.value);
+        const percentage = (value - min) / (max - min);
+        
+        // Rotate from -135deg to +135deg (270 degrees total range)
+        const rotation = -135 + (percentage * 270);
+        indicator.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
+    }
 
-    const updateEQ = () => {
+    // Speed Knob
+    speedKnob.addEventListener('input', () => {
+        const value = speedKnob.value;
+        speedValue.textContent = value + '%';
+        updateKnobIndicator(speedKnob, speedIndicator);
+        updateAudio();
+    });
+    
+    // Pitch Knob
+    pitchKnob.addEventListener('input', () => {
+        const value = parseFloat(pitchKnob.value).toFixed(1);
+        pitchValue.textContent = value + ' st';
+        updateKnobIndicator(pitchKnob, pitchIndicator);
+        updateAudio();
+    });
+
+    // Initialize knob indicators
+    updateKnobIndicator(speedKnob, speedIndicator);
+    updateKnobIndicator(pitchKnob, pitchIndicator);
+
+    // Wet/Dry Mix
+    wetDryMixSlider.addEventListener('input', (e) => {
+        const value = parseFloat(e.target.value);
+        wetDryValue.textContent = Math.round(value * 100) + '%';
+        
+        if (wetDry && dryGain && typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+            wetDry.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
+            dryGain.gain.linearRampToValueAtTime(1 - value, Tone.context.currentTime + smoothingTime);
+        } else if (wetDry && dryGain) {
+            wetDry.gain.value = value;
+            dryGain.gain.value = 1 - value;
+        }
+    });
+
+    // EQ Controls
+    lowEqKnob.addEventListener('input', updateEQ);
+    midEqKnob.addEventListener('input', updateEQ);
+    highEqKnob.addEventListener('input', updateEQ);
+
+    function updateEQ() {
         const lowGain = parseFloat(lowEqKnob.value);
         const midGain = parseFloat(midEqKnob.value);
         const highGain = parseFloat(highEqKnob.value);
 
-        // Update UI text
         lowEqValue.textContent = lowGain.toFixed(1) + ' dB';
         midEqValue.textContent = midGain.toFixed(1) + ' dB';
         highEqValue.textContent = highGain.toFixed(1) + ' dB';
 
-        // Update audio if available
         if (!lowShelf) return;
 
         if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
@@ -194,118 +204,192 @@ document.addEventListener('DOMContentLoaded', () => {
             lowShelf.mid.value = midGain;
             lowShelf.high.value = highGain;
         }
+    }
 
-        // Update display values safely
-        timeShiftValue.textContent = timeShiftKnob.value;
-        const timeUnit = timeShiftValue.querySelector('.unit');
-        if (timeUnit) timeUnit.textContent = '%';
+    // Audio Update Function (keeping existing logic)
+    function updateAudio() {
+        if (!player || !pitchShift) return;
+
+        const playbackRate = parseFloat(speedKnob.value) / 100;
+        player.playbackRate = playbackRate;
+
+        // Compensate for pitch change from playback rate
+        const timeStretchPitchCorrection = -12 * Math.log2(playbackRate);
+        const userPitchBend = parseFloat(pitchKnob.value);
+        const targetPitch = userPitchBend + timeStretchPitchCorrection;
+
+        if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+            pitchShift.pitch.linearRampToValueAtTime(targetPitch, Tone.context.currentTime + smoothingTime);
+        } else if (pitchShift) {
+            pitchShift.pitch = targetPitch;
+        }
+    }
+
+    // File Input
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validate file
+        if (!validateAudioFile(file)) {
+            e.target.value = '';
+            return;
+        }
+
+        if (typeof Tone === 'undefined') {
+            showNotification('Audio processing library not loaded.', 'error');
+            return;
+        }
+
+        // Add cassette animation
+        if (cassetteIcon) {
+            cassetteIcon.style.animation = 'spin 1s ease-in-out';
+            setTimeout(() => {
+                cassetteIcon.style.animation = '';
+            }, 1000);
+        }
+
+        const url = URL.createObjectURL(file);
+        if (player) {
+            player.dispose();
+        }
         
-        pitchBendValue.textContent = pitchBendKnob.value;
-        const pitchUnit = pitchBendValue.querySelector('.unit');
-        if (pitchUnit) pitchUnit.textContent = 'st';
-
-    };
-
-    timeShiftKnob.addEventListener('input', updateAudio);
-    pitchBendKnob.addEventListener('input', updateAudio);
-
-    lowEqKnob.addEventListener('input', updateEQ);
-    midEqKnob.addEventListener('input', updateEQ);
-    highEqKnob.addEventListener('input', updateEQ);
-
-    wetDryMixSlider.addEventListener('input', (e) => {
-        if (wetDry && dryGain) {
-            const mix = parseFloat(e.target.value);
-            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
-                wetDry.gain.linearRampToValueAtTime(mix, Tone.context.currentTime + smoothingTime);
-                dryGain.gain.linearRampToValueAtTime(1 - mix, Tone.context.currentTime + smoothingTime);
-            } else {
-                wetDry.gain.value = mix;
-                dryGain.gain.value = 1 - mix;
+        if (Tone.Transport.state !== 'stopped') {
+            Tone.Transport.stop();
+            Tone.Transport.position = 0;
+            if (playButton) {
+                playButton.innerHTML = '<i class="fas fa-play"></i> Play';
             }
         }
-        const percentage = Math.round(e.target.value * 100);
-        wetDryMixValue.textContent = percentage;
-        const wetUnit = wetDryMixValue.querySelector('.unit');
-        if (wetUnit) wetUnit.textContent = '%';
+
+        player = new Tone.Player(url, () => {
+            if (playButton) playButton.disabled = false;
+            if (downloadButton) downloadButton.disabled = false;
+            player.sync().start(0);
+            
+            if (lufsNormalizeCheckbox.checked) {
+                applyLUFSNormalization();
+            }
+            
+            showNotification('Audio file loaded successfully!', 'success');
+        });
+
+        player.connect(dryGain);
+        player.connect(wetDry);
     });
 
-    // Secure audio file validation
-    const validateAudioFile = (file) => {
+    // Play Button
+    if (playButton) {
+        playButton.addEventListener('click', () => {
+            if (typeof Tone === 'undefined') {
+                showNotification('Audio processing library not loaded.', 'error');
+                return;
+            }
+            
+            if (player && player.loaded) {
+                if (Tone.context.state !== 'running') {
+                    Tone.context.resume();
+                }
+                
+                if (Tone.Transport.state !== 'started') {
+                    Tone.Transport.start();
+                    playButton.innerHTML = '<i class="fas fa-pause"></i> Pause';
+                } else {
+                    Tone.Transport.pause();
+                    playButton.innerHTML = '<i class="fas fa-play"></i> Play';
+                }
+            }
+        });
+    }
+
+    // Download Button (keeping existing logic)
+    let processedAudioBlob = null;
+    
+    if (downloadButton) {
+        downloadButton.addEventListener('click', async () => {
+            if (!player || !player.loaded) return;
+
+            downloadButton.disabled = true;
+            downloadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            try {
+                const buffer = await Tone.Offline(async (offline) => {
+                    const offlinePlayer = new Tone.Player(player.buffer);
+                    const playbackRate = parseFloat(speedKnob.value) / 100;
+                    offlinePlayer.playbackRate = playbackRate;
+
+                    const timeStretchPitchCorrection = -12 * Math.log2(playbackRate);
+                    const userPitchBend = parseFloat(pitchKnob.value);
+                    const totalPitchShift = userPitchBend + timeStretchPitchCorrection;
+
+                    const offlinePitchShift = new Tone.PitchShift({ pitch: totalPitchShift });
+                    const offlineEQ = new Tone.EQ3({
+                        low: parseFloat(lowEqKnob.value),
+                        mid: parseFloat(midEqKnob.value),
+                        high: parseFloat(highEqKnob.value),
+                        lowFrequency: 400,
+                        highFrequency: 2500
+                    });
+                    const offlineLimiter = new Tone.Limiter(-1);
+
+                    offlinePitchShift.connect(offlineEQ);
+                    offlineEQ.connect(offlineLimiter);
+                    offlineLimiter.connect(offline.destination);
+
+                    const offlineWetGain = new Tone.Gain(parseFloat(wetDryMixSlider.value)).connect(offlinePitchShift);
+                    const offlineDryGain = new Tone.Gain(1 - parseFloat(wetDryMixSlider.value)).connect(offline.destination);
+
+                    offlinePlayer.connect(offlineDryGain);
+                    offlinePlayer.connect(offlineWetGain);
+                    offlinePlayer.start(0);
+                }, player.buffer.duration);
+
+                const wav = bufferToWave(buffer.getChannelData(0), buffer.getChannelData(1), buffer.sampleRate);
+                processedAudioBlob = new Blob([new DataView(wav)], { type: 'audio/wav' });
+                
+                // Direct download
+                const url = URL.createObjectURL(processedAudioBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'halfscrew_processed.wav';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showNotification('Download started!', 'success');
+            } catch (error) {
+                console.error("Error processing audio:", error);
+                showNotification('Error processing audio', 'error');
+            } finally {
+                downloadButton.disabled = false;
+                downloadButton.innerHTML = '<i class="fas fa-download"></i> Download';
+            }
+        });
+    }
+
+    // Helper Functions
+    function validateAudioFile(file) {
         const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/x-wav'];
-        const maxSize = 100 * 1024 * 1024; // 100MB limit
+        const maxSize = 100 * 1024 * 1024; // 100MB
 
         if (!allowedTypes.includes(file.type)) {
-            alert('Please upload only audio files (MP3 or WAV)');
+            showNotification('Please upload only audio files (MP3 or WAV)', 'error');
             return false;
         }
 
         if (file.size > maxSize) {
-            alert('File size must be less than 100MB');
+            showNotification('File size must be less than 100MB', 'error');
             return false;
         }
 
         return true;
-    };
+    }
 
-    // Audio Loading with validation
-    fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-
-            // Validate file
-            if (!validateAudioFile(file)) {
-                e.target.value = ''; // Clear the input
-                return;
-            }
-
-            if (typeof Tone === 'undefined') {
-                alert('Audio processing library not loaded. Cannot process audio files.');
-                return;
-            }
-
-
-            updateStatus('processing');
-
-            const url = URL.createObjectURL(file);
-            if (player) {
-                player.dispose();
-            }
-            // If a file is already playing, stop it and reset.
-            if (Tone.Transport.state !== 'stopped') {
-                Tone.Transport.stop();
-                Tone.Transport.position = 0;
-                playButton.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
-            }
-
-            player = new Tone.Player(url, () => {
-                playButton.disabled = false;
-                downloadButton.disabled = false;
-                player.sync().start(0);
-
-                
-                // Apply LUFS normalization if enabled
-                if (lufsNormalizeCheckbox.checked) {
-                    applyLUFSNormalization();
-                }
-
-                updateStatus('ready');
-
-            });
-
-            player.connect(dryGain);
-            player.connect(wetDry);
-        }
-    });
-
-    // LUFS Normalization (Spotify standard is -14 LUFS)
-    // Note: This is a simplified approximation. True LUFS measurement requires
-    // K-weighting filters and gating. This uses RMS as a basic loudness estimate.
-    const MIN_RMS_THRESHOLD = 0.0001; // Prevent division by zero
-    const applyLUFSNormalization = () => {
+    const MIN_RMS_THRESHOLD = 0.0001;
+    function applyLUFSNormalization() {
         if (!player || !player.buffer) return;
         
-        // Calculate RMS and apply normalization
         const buffer = player.buffer;
         let sumSquares = 0;
         let sampleCount = 0;
@@ -319,13 +403,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const rms = Math.sqrt(sumSquares / sampleCount);
-        // Target RMS approximation for -14 LUFS (simplified approach)
         const targetRMS = 0.1;
         const gainAdjustment = targetRMS / (rms + MIN_RMS_THRESHOLD);
-        
-        // Apply gain to the player (capped at +6dB to prevent clipping)
         player.volume.value = 20 * Math.log10(Math.min(gainAdjustment, 2));
-    };
+    }
 
     lufsNormalizeCheckbox.addEventListener('change', () => {
         if (lufsNormalizeCheckbox.checked && player && player.loaded) {
@@ -335,198 +416,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Transport
-    playButton.addEventListener('click', () => {
-        if (typeof Tone === 'undefined') {
-            alert('Audio processing library not loaded.');
-            return;
-        }
-        if (player && player.loaded) {
-            // It's good practice to resume the AudioContext on a user gesture.
-            if (Tone.context.state !== 'running') {
-                Tone.context.resume();
-            }
-            if (Tone.Transport.state !== 'started') {
-                Tone.Transport.start();
-                playButton.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
-                updateStatus('playing');
-            } else {
-                Tone.Transport.pause();
-                playButton.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
-                updateStatus('ready');
-            }
-        }
-    });
-
-    // Download - show email modal first
-    let processedAudioBlob = null;
-    
-    downloadButton.addEventListener('click', async () => {
-        if (!player || !player.loaded) return;
-
-        downloadButton.disabled = true;
-        downloadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Processing...</span>';
-        updateStatus('processing');
-
-        try {
-            const buffer = await Tone.Offline(async (offline) => {
-                // Create nodes in the offline context
-                const offlinePlayer = new Tone.Player(player.buffer);
-                const playbackRate = parseFloat(timeShiftKnob.value) / 100;
-                offlinePlayer.playbackRate = playbackRate;
-
-                const timeStretchPitchCorrection = -12 * Math.log2(playbackRate);
-                const userPitchBend = parseFloat(pitchBendKnob.value);
-                const totalPitchShift = userPitchBend + timeStretchPitchCorrection;
-
-                const offlinePitchShift = new Tone.PitchShift({
-                    pitch: totalPitchShift
-                });
-
-                const offlineEQ = new Tone.EQ3({
-                    low: parseFloat(lowEqKnob.value),
-                    mid: parseFloat(midEqKnob.value),
-                    high: parseFloat(highEqKnob.value),
-                    lowFrequency: 400,
-                    highFrequency: 2500
-                });
-
-                const offlineLimiter = new Tone.Limiter(-1);
-
-                // Build chain
-                offlinePitchShift.connect(offlineEQ);
-                offlineEQ.connect(offlineLimiter);
-                offlineLimiter.connect(offline.destination);
-
-                const offlineWetGain = new Tone.Gain(parseFloat(wetDryMixSlider.value)).connect(offlinePitchShift);
-                const offlineDryGain = new Tone.Gain(1 - parseFloat(wetDryMixSlider.value)).connect(offline.destination);
-
-                // Connect player to both chains
-                offlinePlayer.connect(offlineDryGain);
-                offlinePlayer.connect(offlineWetGain);
-
-                // start the player
-                offlinePlayer.start(0);
-
-            }, player.buffer.duration);
-
-            const wav = bufferToWave(buffer.getChannelData(0), buffer.getChannelData(1), buffer.sampleRate);
-            processedAudioBlob = new Blob([new DataView(wav)], { type: 'audio/wav' });
-            
-            // Show email modal instead of downloading immediately
-            document.getElementById('download-modal').style.display = 'flex';
-            updateStatus('ready');
-        } catch (error) {
-            console.error("Error processing audio:", error);
-            alert("Sorry, there was an error processing the audio.");
-            updateStatus('ready');
-        } finally {
-            downloadButton.disabled = false;
-            downloadButton.innerHTML = '<i class="fas fa-download"></i><span>Download</span>';
-        }
-    });
-
-    // Presets functionality
-    const presets = {
-        'vocal-enhance': {
-            timeShift: 100,
-            pitchBend: 0,
-            lowEq: -2,
-            midEq: 3,
-            highEq: 2,
-            wetDryMix: 0.7
-        },
-        'bass-boost': {
-            timeShift: 100,
-            pitchBend: 0,
-            lowEq: 8,
-            midEq: -2,
-            highEq: 0,
-            wetDryMix: 0.5
-        },
-        'treble-boost': {
-            timeShift: 100,
-            pitchBend: 0,
-            lowEq: -2,
-            midEq: 0,
-            highEq: 8,
-            wetDryMix: 0.5
-        },
-        'radio-ready': {
-            timeShift: 100,
-            pitchBend: 0,
-            lowEq: 2,
-            midEq: 4,
-            highEq: 3,
-            wetDryMix: 0.8
-        },
-        'chipmunk': {
-            timeShift: 150,
-            pitchBend: 8,
-            lowEq: -6,
-            midEq: 2,
-            highEq: 4,
-            wetDryMix: 1.0
-        },
-        'slow-deep': {
-            timeShift: 70,
-            pitchBend: -6,
-            lowEq: 6,
-            midEq: 0,
-            highEq: -4,
-            wetDryMix: 1.0
-        },
-        'reset': {
-            timeShift: 100,
-            pitchBend: 0,
-            lowEq: 0,
-            midEq: 0,
-            highEq: 0,
-            wetDryMix: 0.5
-        }
-    };
-
-    const applyPreset = (presetName) => {
-        const preset = presets[presetName];
-        if (!preset) return;
-
-        timeShiftKnob.value = preset.timeShift;
-        pitchBendKnob.value = preset.pitchBend;
-        lowEqKnob.value = preset.lowEq;
-        midEqKnob.value = preset.midEq;
-        highEqKnob.value = preset.highEq;
-        wetDryMixSlider.value = preset.wetDryMix;
-
-        updateAudio();
-        updateEQ();
-        wetDryMixValue.textContent = preset.wetDryMix;
-    };
-
-    // Helper function to convert AudioBuffer to WAV
     function bufferToWave(ch0, ch1, sampleRate) {
         const numChannels = 2;
         const numFrames = ch0.length;
         const buffer = new ArrayBuffer(44 + numFrames * numChannels * 2);
         const view = new DataView(buffer);
 
-        // RIFF chunk descriptor
         writeString(view, 0, 'RIFF');
         view.setUint32(4, 36 + numFrames * numChannels * 2, true);
         writeString(view, 8, 'WAVE');
-        // FMT sub-chunk
         writeString(view, 12, 'fmt ');
         view.setUint32(16, 16, true);
         view.setUint16(20, 1, true);
         view.setUint16(22, numChannels, true);
         view.setUint32(24, sampleRate, true);
         view.setUint32(28, sampleRate * 4, true);
-        view.setUint16(32, numChannels*2, true);
+        view.setUint16(32, numChannels * 2, true);
         view.setUint16(34, 16, true);
-        // data sub-chunk
         writeString(view, 36, 'data');
         view.setUint32(40, numFrames * numChannels * 2, true);
 
-        // write the PCM samples
         let offset = 44;
         for (let i = 0; i < numFrames; i++) {
             view.setInt16(offset, ch0[i] * 0x7FFF, true);
@@ -544,233 +453,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Modal Logic
-    const loginButton = document.getElementById('login-button');
-    const authModal = document.getElementById('auth-modal');
-    const modalTitle = document.getElementById('modal-title');
-    const authForm = document.getElementById('auth-form');
-    const authSubmitButton = document.getElementById('auth-submit-button');
-    const authSwitchLink = document.getElementById('auth-switch-link');
-    const authSwitchText = document.getElementById('auth-switch-text');
-
-    // EQ Modal
-    const eqModal = document.getElementById('eq-modal');
-    const eqCloseButton = document.getElementById('eq-close-button');
-
-    // Presets Modal
-    const presetsModal = document.getElementById('presets-modal');
-    const presetsCloseButton = document.getElementById('presets-close-button');
-
-    let isLoginMode = true;
-
-    loginButton.addEventListener('click', () => {
-        authModal.style.display = 'flex';
-    });
-
-    authModal.addEventListener('click', (e) => {
-        if (e.target === authModal) {
-            authModal.style.display = 'none';
-        }
-    });
-
-    // EQ Modal handlers
-    eqEnableCheckbox.addEventListener('change', () => {
-        if (eqEnableCheckbox.checked) {
-            eqModal.style.display = 'flex';
-        }
-    });
-
-    eqCloseButton.addEventListener('click', () => {
-        eqModal.style.display = 'none';
-    });
-
-    eqModal.addEventListener('click', (e) => {
-        if (e.target === eqModal) {
-            eqModal.style.display = 'none';
-        }
-    });
-
-    // Presets Modal handlers
-    presetsButton.addEventListener('click', () => {
-        presetsModal.style.display = 'flex';
-    });
-
-    presetsCloseButton.addEventListener('click', () => {
-        presetsModal.style.display = 'none';
-    });
-
-    presetsModal.addEventListener('click', (e) => {
-        if (e.target === presetsModal) {
-            presetsModal.style.display = 'none';
-        }
-    });
-
-    // Apply preset when clicked
-    document.querySelectorAll('.preset-button').forEach(button => {
-        button.addEventListener('click', () => {
-            const presetName = button.getAttribute('data-preset');
-            applyPreset(presetName);
-            presetsModal.style.display = 'none';
-        });
-    });
-
-    const switchAuthMode = (e) => {
-        e.preventDefault();
-        isLoginMode = !isLoginMode;
-        if (isLoginMode) {
-            modalTitle.textContent = 'Login';
-            authSubmitButton.textContent = 'Login';
-            // Safely create the switch text
-            authSwitchText.textContent = "Don't have an account? ";
-            const signUpLink = document.createElement('a');
-            signUpLink.href = '#';
-            signUpLink.id = 'auth-switch-link';
-            signUpLink.textContent = 'Sign Up';
-            authSwitchText.appendChild(signUpLink);
-        } else {
-            modalTitle.textContent = 'Sign Up';
-            authSubmitButton.textContent = 'Sign Up';
-            // Safely create the switch text
-            authSwitchText.textContent = 'Already have an account? ';
-            const loginLink = document.createElement('a');
-            loginLink.href = '#';
-            loginLink.id = 'auth-switch-link';
-            loginLink.textContent = 'Login';
-            authSwitchText.appendChild(loginLink);
-        }
-        document.getElementById('auth-switch-link').addEventListener('click', switchAuthMode);
-    };
-
-    authSwitchLink.addEventListener('click', switchAuthMode);
-
-    authForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        // Backend logic would go here.
-        alert('Login successful!');
-        authModal.style.display = 'none';
-    });
-
-    // Download Modal Handlers
-    const downloadModal = document.getElementById('download-modal');
-    const downloadModalClose = document.getElementById('download-modal-close');
-    const downloadEmailForm = document.getElementById('download-email-form');
-    const downloadEmailInput = document.getElementById('download-email-input');
-
-    // Close download modal
-    downloadModalClose.addEventListener('click', () => {
-        downloadModal.style.display = 'none';
-        downloadEmailInput.value = '';
-    });
-
-    // Close modal when clicking outside
-    downloadModal.addEventListener('click', (e) => {
-        if (e.target === downloadModal) {
-            downloadModal.style.display = 'none';
-            downloadEmailInput.value = '';
-        }
-    });
-
-    // Handle email form submission
-    downloadEmailForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: ${type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#3b82f6'};
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 10000;
+            font-weight: 600;
+            animation: slideDown 0.3s ease;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
         
-        const email = downloadEmailInput.value.trim();
-        const submitButton = document.getElementById('download-submit-button');
-        
-        // Disable button while processing
-        submitButton.disabled = true;
-        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Submitting...</span>';
-
-        try {
-            // Save email to backend
-            const response = await fetch('http://localhost:3000/api/save-email', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email }),
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                // Download the audio file
-                if (processedAudioBlob) {
-                    const url = URL.createObjectURL(processedAudioBlob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'processed_audio.wav';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                }
-
-                // Show success message
-                showStatusMessage('Thank you! Your download will start shortly.');
-                
-                // Close modal
-                downloadModal.style.display = 'none';
-                downloadEmailInput.value = '';
-            } else {
-                alert('Failed to save email. Please try again.');
-            }
-        } catch (error) {
-            console.error('Error saving email:', error);
-            // Still allow download even if backend fails
-            if (processedAudioBlob) {
-                const url = URL.createObjectURL(processedAudioBlob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'processed_audio.wav';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                
-                showStatusMessage('Download started! (Email could not be saved - please check server)');
-                downloadModal.style.display = 'none';
-                downloadEmailInput.value = '';
-            }
-        } finally {
-            submitButton.disabled = false;
-            submitButton.innerHTML = '<i class="fas fa-paper-plane"></i><span>Submit & Download</span>';
-        }
-    });
-
-    // Drawer Toggle Functionality
-    // Accessible status message region
-    function showStatusMessage(message) {
-        let statusRegion = document.getElementById('status-message-region');
-        if (!statusRegion) {
-            statusRegion = document.createElement('div');
-            statusRegion.id = 'status-message-region';
-            statusRegion.setAttribute('role', 'status');
-            statusRegion.setAttribute('aria-live', 'polite');
-            statusRegion.style.position = 'fixed';
-            statusRegion.style.bottom = '1rem';
-            statusRegion.style.right = '1rem';
-            statusRegion.style.background = '#333';
-            statusRegion.style.color = '#fff';
-            statusRegion.style.padding = '0.75rem 1.25rem';
-            statusRegion.style.borderRadius = '0.5rem';
-            statusRegion.style.zIndex = '1000';
-            statusRegion.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
-            document.body.appendChild(statusRegion);
-        }
-        statusRegion.textContent = message;
-        statusRegion.style.display = 'block';
         setTimeout(() => {
-            statusRegion.style.display = 'none';
+            notification.style.animation = 'slideUp 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
         }, 3000);
     }
 
-    const drawerToggles = document.querySelectorAll('.drawer-toggle');
-    drawerToggles.forEach(toggle => {
-        toggle.addEventListener('click', () => {
-            const position = toggle.classList.contains('drawer-toggle-left') ? 'left' :
-                           toggle.classList.contains('drawer-toggle-right') ? 'right' : 'top';
-            showStatusMessage(`${position.charAt(0).toUpperCase() + position.slice(1)} drawer toggle clicked! (Drawer functionality to be implemented)`);
-        });
-    });
+    // Add animation keyframes
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideDown {
+            from {
+                transform: translate(-50%, -100%);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, 0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideUp {
+            from {
+                transform: translate(-50%, 0);
+                opacity: 1;
+            }
+            to {
+                transform: translate(-50%, -100%);
+                opacity: 0;
+            }
+        }
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    `;
+    document.head.appendChild(style);
 });
