@@ -21,8 +21,10 @@ Professional web-based audio plugin for time-stretching and pitch-shifting. Chan
 ### API Integration
 - **API Documentation**: Built-in documentation modal showing all available endpoints
 - **Health Check**: Test backend server connection
-- **Email Collection**: Save user emails for download tracking
-- **User Management**: Admin endpoint to retrieve registered users
+- **Email Collection**: Save user emails for download tracking (requires backend)
+- **User Management**: Admin endpoint to retrieve registered users (rate-limited, requires backend)
+
+**Privacy & Security**: Email data is stored locally in SQLite database when using the backend server. The admin endpoint `/api/users` is rate-limited to 10 requests per 15 minutes. For production deployments, implement proper authentication and access controls for admin endpoints. See [BACKEND.md](BACKEND.md) for security details.
 
 ### User Interface
 - **Light/Dark Theme**: Toggle between purple and orange color schemes
@@ -50,6 +52,8 @@ Visit the live demo: [HalfScrew Audio Plugin](https://myaiplug.github.io/HalfScr
 2. View available endpoints and their documentation
 3. Click **Test Connection** to verify the backend server is running
 4. The backend must be running on `localhost:3000` for API features to work
+
+**Note**: When the backend is not running, the audio processing features will still work. The API is only required for email collection and user management features. The application gracefully degrades if the backend is unavailable.
 
 ### Running with Backend
 
