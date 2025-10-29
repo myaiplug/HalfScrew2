@@ -129,10 +129,10 @@ This checklist outlines all tasks needed to deploy HalfScrew for preview and pro
   - [ ] Add demo audio file
 
 - [ ] **Feature Additions (Future)**
-  - [ ] Add preset system
+  - [x] Add preset system
   - [ ] Add undo/redo functionality
   - [ ] Add keyboard shortcuts
-  - [ ] Add save/load settings
+  - [x] Add save/load settings
   - [ ] Add multiple audio tracks support
   - [ ] Add frequency analyzer view
   - [ ] Add export format options (MP3, OGG, FLAC)
