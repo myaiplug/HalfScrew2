@@ -16,6 +16,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsModal = document.getElementById('settings-modal');
     const settingsClose = document.getElementById('settings-close');
     
+    // API modal
+    const apiBtn = document.getElementById('api-btn');
+    const apiModal = document.getElementById('api-modal');
+    const apiClose = document.getElementById('api-close');
+    const testApiBtn = document.getElementById('test-api-btn');
+    const apiStatus = document.getElementById('api-status');
+    
+    // Preset controls
+    const presetSelect = document.getElementById('preset-select');
+    const loadPresetBtn = document.getElementById('load-preset-btn');
+    const savePresetBtn = document.getElementById('save-preset-btn');
+    const deletePresetBtn = document.getElementById('delete-preset-btn');
+    
     // Audio controls
     const fileInput = document.getElementById('file-input');
     const playButton = document.getElementById('play-button');
@@ -119,6 +132,43 @@ document.addEventListener('DOMContentLoaded', () => {
     settingsModal.addEventListener('click', (e) => {
         if (e.target === settingsModal) {
             settingsModal.style.display = 'none';
+        }
+    });
+
+    // API Modal
+    apiBtn.addEventListener('click', () => {
+        apiModal.style.display = 'flex';
+    });
+    
+    apiClose.addEventListener('click', () => {
+        apiModal.style.display = 'none';
+    });
+    
+    apiModal.addEventListener('click', (e) => {
+        if (e.target === apiModal) {
+            apiModal.style.display = 'none';
+        }
+    });
+
+    // Test API Connection
+    testApiBtn.addEventListener('click', async () => {
+        apiStatus.className = 'api-status loading';
+        apiStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing connection...';
+        
+        try {
+            const response = await fetch('http://localhost:3000/api/health');
+            const data = await response.json();
+            
+            if (data.status === 'ok') {
+                apiStatus.className = 'api-status success';
+                apiStatus.innerHTML = '<i class="fas fa-check-circle"></i> Connected successfully! Server is running.';
+            } else {
+                apiStatus.className = 'api-status error';
+                apiStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Server responded but status is not OK.';
+            }
+        } catch (error) {
+            apiStatus.className = 'api-status error';
+            apiStatus.innerHTML = '<i class="fas fa-times-circle"></i> Cannot connect to server. Make sure the backend is running on localhost:3000.';
         }
     });
 
@@ -477,4 +527,162 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => notification.remove(), 300);
         }, 3000);
     }
+
+    // Preset Management System
+    const PRESETS_STORAGE_KEY = 'halfscrew_presets';
+
+    function getCurrentSettings() {
+        return {
+            speed: parseFloat(speedKnob.value),
+            pitch: parseFloat(pitchKnob.value),
+            wetDryMix: parseFloat(wetDryMixSlider.value),
+            eqEnabled: eqEnableCheckbox.checked,
+            lowEq: parseFloat(lowEqKnob.value),
+            midEq: parseFloat(midEqKnob.value),
+            highEq: parseFloat(highEqKnob.value),
+            lufsNormalize: lufsNormalizeCheckbox.checked
+        };
+    }
+
+    function applySettings(settings) {
+        // Apply speed
+        speedKnob.value = settings.speed;
+        speedValue.textContent = settings.speed + '%';
+        updateKnobIndicator(speedKnob, speedIndicator);
+        
+        // Apply pitch
+        pitchKnob.value = settings.pitch;
+        pitchValue.textContent = settings.pitch.toFixed(1) + ' st';
+        updateKnobIndicator(pitchKnob, pitchIndicator);
+        
+        // Apply wet/dry mix
+        wetDryMixSlider.value = settings.wetDryMix;
+        wetDryValue.textContent = Math.round(settings.wetDryMix * 100) + '%';
+        if (wetDry && dryGain && typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+            wetDry.gain.linearRampToValueAtTime(settings.wetDryMix, Tone.context.currentTime + smoothingTime);
+            dryGain.gain.linearRampToValueAtTime(1 - settings.wetDryMix, Tone.context.currentTime + smoothingTime);
+        } else if (wetDry && dryGain) {
+            wetDry.gain.value = settings.wetDryMix;
+            dryGain.gain.value = 1 - settings.wetDryMix;
+        }
+        
+        // Apply EQ settings
+        eqEnableCheckbox.checked = settings.eqEnabled;
+        eqControlsDiv.style.display = settings.eqEnabled ? 'block' : 'none';
+        lowEqKnob.value = settings.lowEq;
+        midEqKnob.value = settings.midEq;
+        highEqKnob.value = settings.highEq;
+        updateEQ();
+        
+        // Apply LUFS normalization
+        lufsNormalizeCheckbox.checked = settings.lufsNormalize;
+        if (settings.lufsNormalize && player && player.loaded) {
+            applyLUFSNormalization();
+        } else if (player) {
+            player.volume.value = 0;
+        }
+        
+        // Update audio with new settings
+        updateAudio();
+    }
+
+    function loadPresets() {
+        const presetsJson = localStorage.getItem(PRESETS_STORAGE_KEY);
+        return presetsJson ? JSON.parse(presetsJson) : {};
+    }
+
+    function savePresetsToStorage(presets) {
+        localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(presets));
+    }
+
+    function updatePresetDropdown() {
+        const presets = loadPresets();
+        const currentValue = presetSelect.value;
+        
+        // Clear existing options except the first one
+        presetSelect.innerHTML = '<option value="">-- Select Preset --</option>';
+        
+        // Add preset options
+        Object.keys(presets).sort().forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            presetSelect.appendChild(option);
+        });
+        
+        // Restore selection if it still exists
+        if (currentValue && presets[currentValue]) {
+            presetSelect.value = currentValue;
+        }
+    }
+
+    // Initialize presets dropdown
+    updatePresetDropdown();
+
+    // Save Preset
+    savePresetBtn.addEventListener('click', () => {
+        const name = prompt('Enter a name for this preset:');
+        if (!name) return;
+        
+        if (name.trim() === '') {
+            showNotification('Preset name cannot be empty', 'error');
+            return;
+        }
+        
+        const presets = loadPresets();
+        presets[name.trim()] = getCurrentSettings();
+        savePresetsToStorage(presets);
+        updatePresetDropdown();
+        presetSelect.value = name.trim();
+        
+        showNotification(`Preset "${name.trim()}" saved successfully!`, 'success');
+    });
+
+    // Load Preset
+    loadPresetBtn.addEventListener('click', () => {
+        const selectedPreset = presetSelect.value;
+        if (!selectedPreset) {
+            showNotification('Please select a preset to load', 'error');
+            return;
+        }
+        
+        const presets = loadPresets();
+        if (presets[selectedPreset]) {
+            applySettings(presets[selectedPreset]);
+            showNotification(`Preset "${selectedPreset}" loaded successfully!`, 'success');
+        } else {
+            showNotification('Preset not found', 'error');
+        }
+    });
+
+    // Delete Preset
+    deletePresetBtn.addEventListener('click', () => {
+        const selectedPreset = presetSelect.value;
+        if (!selectedPreset) {
+            showNotification('Please select a preset to delete', 'error');
+            return;
+        }
+        
+        if (!confirm(`Are you sure you want to delete the preset "${selectedPreset}"?`)) {
+            return;
+        }
+        
+        const presets = loadPresets();
+        delete presets[selectedPreset];
+        savePresetsToStorage(presets);
+        updatePresetDropdown();
+        
+        showNotification(`Preset "${selectedPreset}" deleted successfully!`, 'success');
+    });
+
+    // Quick load on preset selection change (optional)
+    presetSelect.addEventListener('change', () => {
+        if (presetSelect.value) {
+            const presets = loadPresets();
+            if (presets[presetSelect.value]) {
+                applySettings(presets[presetSelect.value]);
+                showNotification(`Preset "${presetSelect.value}" loaded!`, 'success');
+            }
+        }
+    });
 });
