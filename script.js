@@ -4,8 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const speedValue = document.getElementById('speed-value');
     const pitchKnob = document.getElementById('pitch-knob');
     const pitchValue = document.getElementById('pitch-value');
-    const speedIndicator = document.querySelector('#speed-knob + .knob-indicator');
-    const pitchIndicator = document.querySelector('#pitch-knob + .knob-indicator');
+    const speedIndicator = speedKnob?.parentElement.querySelector('.knob-indicator');
+    const pitchIndicator = pitchKnob?.parentElement.querySelector('.knob-indicator');
     
     // Theme toggle
     const themeToggle = document.getElementById('theme-toggle');
@@ -477,38 +477,4 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => notification.remove(), 300);
         }, 3000);
     }
-
-    // Add animation keyframes
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideDown {
-            from {
-                transform: translate(-50%, -100%);
-                opacity: 0;
-            }
-            to {
-                transform: translate(-50%, 0);
-                opacity: 1;
-            }
-        }
-        @keyframes slideUp {
-            from {
-                transform: translate(-50%, 0);
-                opacity: 1;
-            }
-            to {
-                transform: translate(-50%, -100%);
-                opacity: 0;
-            }
-        }
-        @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
-            }
-        }
-    `;
-    document.head.appendChild(style);
 });

@@ -211,21 +211,20 @@ body {
     font-size: 13px;
     font-weight: 600;
     color: var(--marker-color);
-    transform-origin: center;
 }
 
-.marker:nth-child(1) {
+.marker-min {
     top: 15%;
     left: 5%;
 }
 
-.marker:nth-child(2) {
+.marker-mid {
     top: 5%;
     left: 50%;
     transform: translateX(-50%);
 }
 
-.marker:nth-child(3) {
+.marker-max {
     top: 15%;
     right: 5%;
 }
@@ -628,5 +627,37 @@ body {
 
     .modal-content {
         padding: 30px 20px;
+    }
+}
+
+/* Animations */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes slideDown {
+    from {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+    to {
+        transform: translate(-50%, -100%);
+        opacity: 0;
     }
 }
