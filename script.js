@@ -67,7 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
             highFrequency: 2500
         });
         
-        limiter = new Tone.Limiter(-1);
+        // Use less aggressive limiter threshold to prevent distortion
+        limiter = new Tone.Limiter(-0.1);
         
         // Audio chain
         pitchShift.connect(lowShelf);
@@ -302,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Download Button (keeping existing logic)
+    // Download Button - Fixed for audio quality issues
     let processedAudioBlob = null;
     
     if (downloadButton) {
@@ -330,7 +331,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         lowFrequency: 400,
                         highFrequency: 2500
                     });
-                    const offlineLimiter = new Tone.Limiter(-1);
+                    // Use less aggressive limiter threshold to prevent distortion
+                    const offlineLimiter = new Tone.Limiter(-0.1);
 
                     offlinePitchShift.connect(offlineEQ);
                     offlineEQ.connect(offlineLimiter);
@@ -344,20 +346,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     offlinePlayer.start(0);
                 }, player.buffer.duration);
 
-                const wav = bufferToWave(buffer.getChannelData(0), buffer.getChannelData(1), buffer.sampleRate);
-                processedAudioBlob = new Blob([new DataView(wav)], { type: 'audio/wav' });
+                // Use MP3 encoding for better quality and smaller file size
+                const ch0 = buffer.getChannelData(0);
+                const ch1 = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : ch0;
+                const mp3 = bufferToMp3(ch0, ch1, buffer.sampleRate);
+                processedAudioBlob = new Blob([mp3], { type: 'audio/mpeg' });
                 
                 // Direct download
                 const url = URL.createObjectURL(processedAudioBlob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'halfscrew_processed.wav';
+                a.download = 'halfscrew_processed.mp3';
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 
-                showNotification('Download started!', 'success');
+                showNotification('Download started! Audio quality has been improved.', 'success');
             } catch (error) {
                 console.error("Error processing audio:", error);
                 showNotification('Error processing audio', 'error');
@@ -417,6 +422,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function bufferToWave(ch0, ch1, sampleRate) {
+        // Handle mono audio by duplicating to stereo if needed
+        if (!ch1 || ch1.length === 0) {
+            ch1 = ch0;
+        }
+        
         const numChannels = 2;
         const numFrames = ch0.length;
         const buffer = new ArrayBuffer(44 + numFrames * numChannels * 2);
@@ -438,9 +448,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let offset = 44;
         for (let i = 0; i < numFrames; i++) {
-            view.setInt16(offset, ch0[i] * 0x7FFF, true);
+            // Clamp values to prevent integer overflow and distortion
+            const sample0 = Math.max(-1, Math.min(1, ch0[i])) * 0x7FFF;
+            const sample1 = Math.max(-1, Math.min(1, ch1[i])) * 0x7FFF;
+            
+            view.setInt16(offset, sample0, true);
             offset += 2;
-            view.setInt16(offset, ch1[i] * 0x7FFF, true);
+            view.setInt16(offset, sample1, true);
             offset += 2;
         }
 
@@ -451,6 +465,63 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < string.length; i++) {
             view.setUint8(offset + i, string.charCodeAt(i));
         }
+    }
+
+    // Convert audio buffer to MP3 format
+    function bufferToMp3(ch0, ch1, sampleRate) {
+        // Handle mono audio by duplicating to stereo if needed
+        if (!ch1 || ch1.length === 0) {
+            ch1 = ch0;
+        }
+
+        // Check if lamejs is available
+        if (typeof lamejs === 'undefined') {
+            console.error('lamejs library not loaded, falling back to WAV');
+            return bufferToWave(ch0, ch1, sampleRate);
+        }
+
+        const mp3encoder = new lamejs.Mp3Encoder(2, sampleRate, 320); // 320 kbps for high quality
+        const mp3Data = [];
+        
+        const sampleBlockSize = 1152; // LAME encoding block size
+        const numFrames = ch0.length;
+        
+        // Convert float samples to 16-bit integers with proper clamping
+        for (let i = 0; i < numFrames; i += sampleBlockSize) {
+            const left = new Int16Array(sampleBlockSize);
+            const right = new Int16Array(sampleBlockSize);
+            
+            for (let j = 0; j < sampleBlockSize && i + j < numFrames; j++) {
+                // Clamp values to prevent distortion
+                const sample0 = Math.max(-1, Math.min(1, ch0[i + j]));
+                const sample1 = Math.max(-1, Math.min(1, ch1[i + j]));
+                
+                left[j] = sample0 * 0x7FFF;
+                right[j] = sample1 * 0x7FFF;
+            }
+            
+            const mp3buf = mp3encoder.encodeBuffer(left, right);
+            if (mp3buf.length > 0) {
+                mp3Data.push(mp3buf);
+            }
+        }
+        
+        // Finalize the MP3
+        const mp3buf = mp3encoder.flush();
+        if (mp3buf.length > 0) {
+            mp3Data.push(mp3buf);
+        }
+        
+        // Combine all MP3 chunks
+        const totalLength = mp3Data.reduce((acc, chunk) => acc + chunk.length, 0);
+        const mp3Buffer = new Uint8Array(totalLength);
+        let offset = 0;
+        for (const chunk of mp3Data) {
+            mp3Buffer.set(chunk, offset);
+            offset += chunk.length;
+        }
+        
+        return mp3Buffer.buffer;
     }
 
     function showNotification(message, type = 'info') {
