@@ -71,8 +71,16 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Constants
     const FFT_NORMALIZATION_OFFSET = 100;
+    const FFT_NORMALIZATION_DIVISOR = 1 / FFT_NORMALIZATION_OFFSET;
     const CLIPPING_THRESHOLD = 95;
     const CLIPPING_FLASH_DURATION = 500;
+    const LOW_FREQ_RANGE_FACTOR = 0.05; // ~20-400 Hz range
+    const MID_FREQ_RANGE_FACTOR = 0.2;  // ~400-2500 Hz range
+    
+    // Clipping timeout IDs for cleanup
+    let lowClippingTimeout = null;
+    let midClippingTimeout = null;
+    let highClippingTimeout = null;
 
     // Initialize buttons
     if (playButton) playButton.disabled = true;
@@ -173,11 +181,43 @@ document.addEventListener('DOMContentLoaded', () => {
     
     eqClose.addEventListener('click', () => {
         eqModal.style.display = 'none';
+        // Clean up clipping timeouts when modal closes
+        if (lowClippingTimeout) {
+            clearTimeout(lowClippingTimeout);
+            lowClippingTimeout = null;
+            isLowClipping = false;
+        }
+        if (midClippingTimeout) {
+            clearTimeout(midClippingTimeout);
+            midClippingTimeout = null;
+            isMidClipping = false;
+        }
+        if (highClippingTimeout) {
+            clearTimeout(highClippingTimeout);
+            highClippingTimeout = null;
+            isHighClipping = false;
+        }
     });
     
     eqModal.addEventListener('click', (e) => {
         if (e.target === eqModal) {
             eqModal.style.display = 'none';
+            // Clean up clipping timeouts when modal closes
+            if (lowClippingTimeout) {
+                clearTimeout(lowClippingTimeout);
+                lowClippingTimeout = null;
+                isLowClipping = false;
+            }
+            if (midClippingTimeout) {
+                clearTimeout(midClippingTimeout);
+                midClippingTimeout = null;
+                isMidClipping = false;
+            }
+            if (highClippingTimeout) {
+                clearTimeout(highClippingTimeout);
+                highClippingTimeout = null;
+                isHighClipping = false;
+            }
         }
     });
 
@@ -282,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Setup audio analyser for visualizer
     function setupAnalyser() {
-        if (!player || typeof Tone === 'undefined') return;
+        if (!player || typeof Tone === 'undefined' || !limiter) return;
         
         analyser = new Tone.Analyser('fft', 1024);
         limiter.connect(analyser);
@@ -302,20 +342,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Low: 20-400 Hz
         // Mid: 400-2500 Hz  
         // High: 2500+ Hz
-        const lowRange = Math.floor(fftSize * 0.05);
-        const midRange = Math.floor(fftSize * 0.2);
+        const lowRange = Math.floor(fftSize * LOW_FREQ_RANGE_FACTOR);
+        const midRange = Math.floor(fftSize * MID_FREQ_RANGE_FACTOR);
         
         // Calculate average energy for each band
         let lowSum = 0, midSum = 0, highSum = 0;
         
         for (let i = 0; i < lowRange; i++) {
-            lowSum += Math.abs(values[i] + FFT_NORMALIZATION_OFFSET) / FFT_NORMALIZATION_OFFSET;
+            lowSum += Math.abs(values[i] + FFT_NORMALIZATION_OFFSET) * FFT_NORMALIZATION_DIVISOR;
         }
         for (let i = lowRange; i < midRange; i++) {
-            midSum += Math.abs(values[i] + FFT_NORMALIZATION_OFFSET) / FFT_NORMALIZATION_OFFSET;
+            midSum += Math.abs(values[i] + FFT_NORMALIZATION_OFFSET) * FFT_NORMALIZATION_DIVISOR;
         }
         for (let i = midRange; i < fftSize; i++) {
-            highSum += Math.abs(values[i] + FFT_NORMALIZATION_OFFSET) / FFT_NORMALIZATION_OFFSET;
+            highSum += Math.abs(values[i] + FFT_NORMALIZATION_OFFSET) * FFT_NORMALIZATION_DIVISOR;
         }
         
         const targetLow = Math.min((lowSum / lowRange) * 100, 100);
@@ -332,13 +372,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (lowVisualizer) {
             lowVisualizer.style.setProperty('--after-height', lowEnergy + '%');
             
-            // Check for clipping with flag to prevent timer accumulation
+            // Check for clipping with flag and timeout ID to prevent timer accumulation
             if (lowEnergy > CLIPPING_THRESHOLD && !isLowClipping) {
                 isLowClipping = true;
                 lowVisualizer.classList.add('clipping');
-                setTimeout(() => {
+                if (lowClippingTimeout) clearTimeout(lowClippingTimeout);
+                lowClippingTimeout = setTimeout(() => {
                     lowVisualizer.classList.remove('clipping');
                     isLowClipping = false;
+                    lowClippingTimeout = null;
                 }, CLIPPING_FLASH_DURATION);
             }
         }
@@ -348,9 +390,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (midEnergy > CLIPPING_THRESHOLD && !isMidClipping) {
                 isMidClipping = true;
                 midVisualizer.classList.add('clipping');
-                setTimeout(() => {
+                if (midClippingTimeout) clearTimeout(midClippingTimeout);
+                midClippingTimeout = setTimeout(() => {
                     midVisualizer.classList.remove('clipping');
                     isMidClipping = false;
+                    midClippingTimeout = null;
                 }, CLIPPING_FLASH_DURATION);
             }
         }
@@ -360,9 +404,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (highEnergy > CLIPPING_THRESHOLD && !isHighClipping) {
                 isHighClipping = true;
                 highVisualizer.classList.add('clipping');
-                setTimeout(() => {
+                if (highClippingTimeout) clearTimeout(highClippingTimeout);
+                highClippingTimeout = setTimeout(() => {
                     highVisualizer.classList.remove('clipping');
                     isHighClipping = false;
+                    highClippingTimeout = null;
                 }, CLIPPING_FLASH_DURATION);
             }
         }
@@ -396,7 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Monitor function for repeat functionality
     function checkTransportEnd() {
-        if (player && player.state === 'started' && Tone.Transport.state === 'started') {
+        if (player && player.buffer && player.state === 'started' && Tone.Transport.state === 'started') {
             // Use Tone.Transport.seconds for proper numeric comparison
             if (Tone.Transport.seconds >= player.buffer.duration) {
                 if (isRepeatOn) {

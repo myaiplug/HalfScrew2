@@ -596,7 +596,6 @@ body {
 }
 
 .vertical-slider {
-    -webkit-appearance: slider-vertical;
     writing-mode: vertical-rl;
     width: 8px;
     height: 150px;
