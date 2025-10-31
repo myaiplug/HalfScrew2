@@ -63,6 +63,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let highEnergy = 0;
     let analyser = null;
     let animationFrameId = null;
+    
+    // Clipping detection state
+    let isLowClipping = false;
+    let isMidClipping = false;
+    let isHighClipping = false;
+    
+    // Constants
+    const FFT_NORMALIZATION_OFFSET = 100;
+    const CLIPPING_THRESHOLD = 95;
+    const CLIPPING_FLASH_DURATION = 500;
 
     // Initialize buttons
     if (playButton) playButton.disabled = true;
@@ -299,13 +309,13 @@ document.addEventListener('DOMContentLoaded', () => {
         let lowSum = 0, midSum = 0, highSum = 0;
         
         for (let i = 0; i < lowRange; i++) {
-            lowSum += Math.abs(values[i] + 100) / 100;
+            lowSum += Math.abs(values[i] + FFT_NORMALIZATION_OFFSET) / FFT_NORMALIZATION_OFFSET;
         }
         for (let i = lowRange; i < midRange; i++) {
-            midSum += Math.abs(values[i] + 100) / 100;
+            midSum += Math.abs(values[i] + FFT_NORMALIZATION_OFFSET) / FFT_NORMALIZATION_OFFSET;
         }
         for (let i = midRange; i < fftSize; i++) {
-            highSum += Math.abs(values[i] + 100) / 100;
+            highSum += Math.abs(values[i] + FFT_NORMALIZATION_OFFSET) / FFT_NORMALIZATION_OFFSET;
         }
         
         const targetLow = Math.min((lowSum / lowRange) * 100, 100);
@@ -322,26 +332,38 @@ document.addEventListener('DOMContentLoaded', () => {
         if (lowVisualizer) {
             lowVisualizer.style.setProperty('--after-height', lowEnergy + '%');
             
-            // Check for clipping
-            if (lowEnergy > 95) {
+            // Check for clipping with flag to prevent timer accumulation
+            if (lowEnergy > CLIPPING_THRESHOLD && !isLowClipping) {
+                isLowClipping = true;
                 lowVisualizer.classList.add('clipping');
-                setTimeout(() => lowVisualizer.classList.remove('clipping'), 500);
+                setTimeout(() => {
+                    lowVisualizer.classList.remove('clipping');
+                    isLowClipping = false;
+                }, CLIPPING_FLASH_DURATION);
             }
         }
         
         if (midVisualizer) {
             midVisualizer.style.setProperty('--after-height', midEnergy + '%');
-            if (midEnergy > 95) {
+            if (midEnergy > CLIPPING_THRESHOLD && !isMidClipping) {
+                isMidClipping = true;
                 midVisualizer.classList.add('clipping');
-                setTimeout(() => midVisualizer.classList.remove('clipping'), 500);
+                setTimeout(() => {
+                    midVisualizer.classList.remove('clipping');
+                    isMidClipping = false;
+                }, CLIPPING_FLASH_DURATION);
             }
         }
         
         if (highVisualizer) {
             highVisualizer.style.setProperty('--after-height', highEnergy + '%');
-            if (highEnergy > 95) {
+            if (highEnergy > CLIPPING_THRESHOLD && !isHighClipping) {
+                isHighClipping = true;
                 highVisualizer.classList.add('clipping');
-                setTimeout(() => highVisualizer.classList.remove('clipping'), 500);
+                setTimeout(() => {
+                    highVisualizer.classList.remove('clipping');
+                    isHighClipping = false;
+                }, CLIPPING_FLASH_DURATION);
             }
         }
         
