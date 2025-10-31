@@ -630,9 +630,13 @@ document.addEventListener('DOMContentLoaded', () => {
             downloadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
 
             try {
+                const playbackRate = parseFloat(speedKnob.value) / 100;
+                // Adjust rendering duration based on playback rate
+                // Slower playback (rate < 1) needs more time, faster playback (rate > 1) needs less
+                const renderDuration = player.buffer.duration / playbackRate;
+                
                 const buffer = await Tone.Offline(async (offline) => {
                     const offlinePlayer = new Tone.Player(player.buffer);
-                    const playbackRate = parseFloat(speedKnob.value) / 100;
                     offlinePlayer.playbackRate = playbackRate;
 
                     const timeStretchPitchCorrection = -12 * Math.log2(playbackRate);
@@ -660,7 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     offlinePlayer.connect(offlineDryGain);
                     offlinePlayer.connect(offlineWetGain);
                     offlinePlayer.start(0);
-                }, player.buffer.duration);
+                }, renderDuration);
 
                 // Use MP3 encoding for better quality and smaller file size
                 const ch0 = buffer.getChannelData(0);

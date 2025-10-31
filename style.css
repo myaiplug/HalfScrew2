@@ -206,7 +206,7 @@ body {
 }
 
 .toolbar-btn i {
-    font-size: 20px;
+    font-size: 18px;
     transition: transform 0.3s ease;
 }
 
@@ -243,24 +243,8 @@ body {
     }
     
     .toolbar-btn {
-        min-width: 70px;
-        padding: 12px 16px;
-    }
-    
-    .toolbar-btn i {
-        font-size: 18px;
-    }
-    
-    .toolbar-btn span {
-        font-size: 11px;
-    }
-}
-
-@media (max-width: 480px) {
-    .toolbar-btn {
-        min-width: 60px;
-        padding: 10px 12px;
-        gap: 4px;
+        min-width: 65px;
+        padding: 10px 14px;
     }
     
     .toolbar-btn i {
@@ -269,6 +253,22 @@ body {
     
     .toolbar-btn span {
         font-size: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .toolbar-btn {
+        min-width: 55px;
+        padding: 8px 10px;
+        gap: 3px;
+    }
+    
+    .toolbar-btn i {
+        font-size: 14px;
+    }
+    
+    .toolbar-btn span {
+        font-size: 9px;
     }
 }
 
@@ -810,26 +810,30 @@ body {
     .control-panel {
         flex-direction: column;
         padding: 40px 20px;
-        gap: 50px;
+        gap: 40px;
     }
 
     .knob-container {
-        width: 180px;
-        height: 180px;
+        width: 160px;
+        height: 160px;
     }
 
     .knob-wrapper {
-        width: 120px;
-        height: 120px;
+        width: 112px;
+        height: 112px;
     }
 
     .knob-indicator {
-        height: 40px;
+        height: 36px;
+    }
+    
+    .marker {
+        font-size: 11px;
     }
 
     .cassette-icon svg {
-        width: 100px;
-        height: 66px;
+        width: 96px;
+        height: 64px;
     }
 
     .main-title {
@@ -855,27 +859,35 @@ body {
     }
 
     .control-panel {
-        padding: 30px 15px;
-        gap: 40px;
+        padding: 25px 12px;
+        gap: 30px;
     }
 
     .knob-container {
-        width: 160px;
-        height: 160px;
+        width: 128px;
+        height: 128px;
     }
 
     .knob-wrapper {
-        width: 100px;
-        height: 100px;
+        width: 90px;
+        height: 90px;
     }
 
     .knob-indicator {
-        height: 35px;
+        height: 30px;
         width: 3px;
     }
 
     .label-value {
-        font-size: 24px;
+        font-size: 22px;
+    }
+    
+    .label-name {
+        font-size: 14px;
+    }
+    
+    .marker {
+        font-size: 10px;
     }
 
     .modal-content {
