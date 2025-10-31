@@ -318,18 +318,9 @@ document.addEventListener('DOMContentLoaded', () => {
         midEnergy += (targetMid - midEnergy) * lerpFactor;
         highEnergy += (targetHigh - highEnergy) * lerpFactor;
         
-        // Update visualizer bars
+        // Update visualizer bars using CSS custom properties
         if (lowVisualizer) {
-            lowVisualizer.style.setProperty('--height', lowEnergy + '%');
-            lowVisualizer.querySelector('::after')?.style.setProperty('height', lowEnergy + '%');
-            if (lowVisualizer.querySelector('::after')) {
-                lowVisualizer.querySelector('::after').style.height = lowEnergy + '%';
-            } else {
-                lowVisualizer.style.setProperty('--visualizer-height', lowEnergy + '%');
-            }
-            // Use direct DOM manipulation since ::after is not accessible
-            const afterHeight = lowEnergy + '%';
-            lowVisualizer.style.setProperty('--after-height', afterHeight);
+            lowVisualizer.style.setProperty('--after-height', lowEnergy + '%');
             
             // Check for clipping
             if (lowEnergy > 95) {
@@ -381,6 +372,25 @@ document.addEventListener('DOMContentLoaded', () => {
         fileInput.click();
     });
 
+    // Monitor function for repeat functionality
+    function checkTransportEnd() {
+        if (player && player.state === 'started' && Tone.Transport.state === 'started') {
+            if (Tone.Transport.position >= player.buffer.duration) {
+                if (isRepeatOn) {
+                    Tone.Transport.position = 0;
+                } else {
+                    Tone.Transport.stop();
+                    isPlaying = false;
+                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                    if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
+                }
+            }
+            if (isPlaying) {
+                requestAnimationFrame(checkTransportEnd);
+            }
+        }
+    }
+
     // Toolbar: Play/Pause Button
     playPauseBtn.addEventListener('click', () => {
         if (typeof Tone === 'undefined') {
@@ -398,6 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 isPlaying = true;
                 playPauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
                 if (playButton) playButton.innerHTML = '<i class="fas fa-pause"></i> Pause';
+                checkTransportEnd(); // Start monitoring for repeat
             } else {
                 Tone.Transport.pause();
                 isPlaying = false;
@@ -493,12 +504,12 @@ document.addEventListener('DOMContentLoaded', () => {
             player.sync().start(0);
             
             // Setup repeat functionality
-            player.loop = false; // We'll handle repeat manually
+            player.loop = false;
             player.onstop = () => {
-                if (isRepeatOn && isPlaying) {
-                    Tone.Transport.position = 0;
-                    Tone.Transport.start();
-                }
+                // Handle manual stop
+                isPlaying = false;
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
             };
             
             if (lufsNormalizeCheckbox.checked) {
