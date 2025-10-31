@@ -632,7 +632,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const playbackRate = parseFloat(speedKnob.value) / 100;
                 // Adjust rendering duration based on playback rate
-                // Slower playback (rate < 1) needs more time, faster playback (rate > 1) needs less
+                // Slower playback (rate < 1) produces longer audio, faster playback (rate > 1) produces shorter audio
                 const renderDuration = player.buffer.duration / playbackRate;
                 
                 const buffer = await Tone.Offline(async (offline) => {
