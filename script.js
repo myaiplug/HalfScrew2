@@ -11,31 +11,76 @@ document.addEventListener('DOMContentLoaded', () => {
     const themeToggle = document.getElementById('theme-toggle');
     const body = document.body;
     
-    // Settings modal
+    // Modals
     const settingsBtn = document.getElementById('settings-btn');
     const settingsModal = document.getElementById('settings-modal');
     const settingsClose = document.getElementById('settings-close');
+    const eqBtn = document.getElementById('eq-btn');
+    const eqModal = document.getElementById('eq-modal');
+    const eqClose = document.getElementById('eq-close');
+    const eqBypassBtn = document.getElementById('eq-bypass-btn');
     
-    // Audio controls
+    // Toolbar controls
     const fileInput = document.getElementById('file-input');
+    const loadBtn = document.getElementById('load-btn');
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const rewindBtn = document.getElementById('rewind-btn');
+    const repeatBtn = document.getElementById('repeat-btn');
+    const toolbarDownloadBtn = document.getElementById('toolbar-download-btn');
+    
+    // Legacy controls (still in settings modal)
     const playButton = document.getElementById('play-button');
     const downloadButton = document.getElementById('download-button');
     
     // Settings controls
     const wetDryMixSlider = document.getElementById('wet-dry-mix');
     const wetDryValue = document.getElementById('wet-dry-value');
-    const eqEnableCheckbox = document.getElementById('eq-enable');
     const lufsNormalizeCheckbox = document.getElementById('lufs-normalize');
-    const eqControlsDiv = document.getElementById('eq-controls');
+    
+    // EQ controls
     const lowEqKnob = document.getElementById('low-eq');
-    const lowEqValue = document.getElementById('low-eq-value');
     const midEqKnob = document.getElementById('mid-eq');
-    const midEqValue = document.getElementById('mid-eq-value');
     const highEqKnob = document.getElementById('high-eq');
-    const highEqValue = document.getElementById('high-eq-value');
+    const lowDbValue = document.getElementById('low-db');
+    const midDbValue = document.getElementById('mid-db');
+    const highDbValue = document.getElementById('high-db');
+    const lowVisualizer = document.getElementById('low-visualizer');
+    const midVisualizer = document.getElementById('mid-visualizer');
+    const highVisualizer = document.getElementById('high-visualizer');
     
     // Cassette icon
     const cassetteIcon = document.getElementById('cassette-icon');
+    
+    // State
+    let isPlaying = false;
+    let isRepeatOn = false;
+    let isEqBypassed = false;
+    
+    // Visualizer state
+    let lowEnergy = 0;
+    let midEnergy = 0;
+    let highEnergy = 0;
+    let analyser = null;
+    let animationFrameId = null;
+    
+    // Clipping detection state
+    let isLowClipping = false;
+    let isMidClipping = false;
+    let isHighClipping = false;
+    
+    // Constants
+    const FFT_NORMALIZATION_OFFSET = 100;
+    const FFT_NORMALIZATION_DIVISOR = 1 / FFT_NORMALIZATION_OFFSET;
+    const CLIPPING_THRESHOLD = 95;
+    const CLIPPING_FLASH_DURATION = 500;
+    const LOW_FREQ_RANGE_FACTOR = 0.05; // ~20-400 Hz range
+    const MID_FREQ_RANGE_FACTOR = 0.2;  // ~400-2500 Hz range
+    
+    // Clipping timeout IDs for cleanup
+    let lowClippingTimeout = null;
+    let midClippingTimeout = null;
+    let highClippingTimeout = null;
 
     // Initialize buttons
     if (playButton) playButton.disabled = true;
@@ -123,12 +168,80 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // EQ Enable Checkbox
-    eqEnableCheckbox.addEventListener('change', () => {
-        if (eqEnableCheckbox.checked) {
-            eqControlsDiv.style.display = 'block';
-        } else {
-            eqControlsDiv.style.display = 'none';
+    // EQ Modal
+    eqBtn.addEventListener('click', () => {
+        eqModal.style.display = 'flex';
+        if (!analyser && player) {
+            setupAnalyser();
+        }
+        if (!animationFrameId) {
+            updateVisualizer();
+        }
+    });
+    
+    eqClose.addEventListener('click', () => {
+        eqModal.style.display = 'none';
+        // Clean up clipping timeouts when modal closes
+        if (lowClippingTimeout) {
+            clearTimeout(lowClippingTimeout);
+            lowClippingTimeout = null;
+            isLowClipping = false;
+        }
+        if (midClippingTimeout) {
+            clearTimeout(midClippingTimeout);
+            midClippingTimeout = null;
+            isMidClipping = false;
+        }
+        if (highClippingTimeout) {
+            clearTimeout(highClippingTimeout);
+            highClippingTimeout = null;
+            isHighClipping = false;
+        }
+    });
+    
+    eqModal.addEventListener('click', (e) => {
+        if (e.target === eqModal) {
+            eqModal.style.display = 'none';
+            // Clean up clipping timeouts when modal closes
+            if (lowClippingTimeout) {
+                clearTimeout(lowClippingTimeout);
+                lowClippingTimeout = null;
+                isLowClipping = false;
+            }
+            if (midClippingTimeout) {
+                clearTimeout(midClippingTimeout);
+                midClippingTimeout = null;
+                isMidClipping = false;
+            }
+            if (highClippingTimeout) {
+                clearTimeout(highClippingTimeout);
+                highClippingTimeout = null;
+                isHighClipping = false;
+            }
+        }
+    });
+
+    // EQ Bypass Button
+    eqBypassBtn.addEventListener('click', () => {
+        isEqBypassed = !isEqBypassed;
+        eqBypassBtn.classList.toggle('active', isEqBypassed);
+        
+        if (lowShelf) {
+            if (isEqBypassed) {
+                // Bypass EQ by setting all bands to 0
+                if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+                    lowShelf.low.linearRampToValueAtTime(0, Tone.context.currentTime + smoothingTime);
+                    lowShelf.mid.linearRampToValueAtTime(0, Tone.context.currentTime + smoothingTime);
+                    lowShelf.high.linearRampToValueAtTime(0, Tone.context.currentTime + smoothingTime);
+                } else {
+                    lowShelf.low.value = 0;
+                    lowShelf.mid.value = 0;
+                    lowShelf.high.value = 0;
+                }
+            } else {
+                // Restore EQ values
+                updateEQ();
+            }
         }
     });
 
@@ -190,11 +303,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const midGain = parseFloat(midEqKnob.value);
         const highGain = parseFloat(highEqKnob.value);
 
-        lowEqValue.textContent = lowGain.toFixed(1) + ' dB';
-        midEqValue.textContent = midGain.toFixed(1) + ' dB';
-        highEqValue.textContent = highGain.toFixed(1) + ' dB';
+        lowDbValue.textContent = lowGain.toFixed(1) + ' dB';
+        midDbValue.textContent = midGain.toFixed(1) + ' dB';
+        highDbValue.textContent = highGain.toFixed(1) + ' dB';
 
-        if (!lowShelf) return;
+        if (!lowShelf || isEqBypassed) return;
 
         if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
             lowShelf.low.linearRampToValueAtTime(lowGain, Tone.context.currentTime + smoothingTime);
@@ -205,6 +318,102 @@ document.addEventListener('DOMContentLoaded', () => {
             lowShelf.mid.value = midGain;
             lowShelf.high.value = highGain;
         }
+    }
+
+    // Setup audio analyser for visualizer
+    function setupAnalyser() {
+        if (!player || typeof Tone === 'undefined' || !limiter) return;
+        
+        analyser = new Tone.Analyser('fft', 1024);
+        limiter.connect(analyser);
+    }
+
+    // Update visualizer with smooth lerp
+    function updateVisualizer() {
+        if (!analyser || eqModal.style.display === 'none') {
+            animationFrameId = null;
+            return;
+        }
+
+        const values = analyser.getValue();
+        const fftSize = values.length;
+        
+        // Frequency ranges (approximate)
+        // Low: 20-400 Hz
+        // Mid: 400-2500 Hz  
+        // High: 2500+ Hz
+        const lowRange = Math.floor(fftSize * LOW_FREQ_RANGE_FACTOR);
+        const midRange = Math.floor(fftSize * MID_FREQ_RANGE_FACTOR);
+        
+        // Calculate average energy for each band
+        let lowSum = 0, midSum = 0, highSum = 0;
+        
+        for (let i = 0; i < lowRange; i++) {
+            lowSum += Math.abs(values[i] + FFT_NORMALIZATION_OFFSET) * FFT_NORMALIZATION_DIVISOR;
+        }
+        for (let i = lowRange; i < midRange; i++) {
+            midSum += Math.abs(values[i] + FFT_NORMALIZATION_OFFSET) * FFT_NORMALIZATION_DIVISOR;
+        }
+        for (let i = midRange; i < fftSize; i++) {
+            highSum += Math.abs(values[i] + FFT_NORMALIZATION_OFFSET) * FFT_NORMALIZATION_DIVISOR;
+        }
+        
+        const targetLow = Math.min((lowSum / lowRange) * 100, 100);
+        const targetMid = Math.min((midSum / (midRange - lowRange)) * 100, 100);
+        const targetHigh = Math.min((highSum / (fftSize - midRange)) * 100, 100);
+        
+        // Smooth lerp (analog feel)
+        const lerpFactor = 0.15;
+        lowEnergy += (targetLow - lowEnergy) * lerpFactor;
+        midEnergy += (targetMid - midEnergy) * lerpFactor;
+        highEnergy += (targetHigh - highEnergy) * lerpFactor;
+        
+        // Update visualizer bars using CSS custom properties
+        if (lowVisualizer) {
+            lowVisualizer.style.setProperty('--after-height', lowEnergy + '%');
+            
+            // Check for clipping with flag and timeout ID to prevent timer accumulation
+            if (lowEnergy > CLIPPING_THRESHOLD && !isLowClipping) {
+                isLowClipping = true;
+                lowVisualizer.classList.add('clipping');
+                if (lowClippingTimeout) clearTimeout(lowClippingTimeout);
+                lowClippingTimeout = setTimeout(() => {
+                    lowVisualizer.classList.remove('clipping');
+                    isLowClipping = false;
+                    lowClippingTimeout = null;
+                }, CLIPPING_FLASH_DURATION);
+            }
+        }
+        
+        if (midVisualizer) {
+            midVisualizer.style.setProperty('--after-height', midEnergy + '%');
+            if (midEnergy > CLIPPING_THRESHOLD && !isMidClipping) {
+                isMidClipping = true;
+                midVisualizer.classList.add('clipping');
+                if (midClippingTimeout) clearTimeout(midClippingTimeout);
+                midClippingTimeout = setTimeout(() => {
+                    midVisualizer.classList.remove('clipping');
+                    isMidClipping = false;
+                    midClippingTimeout = null;
+                }, CLIPPING_FLASH_DURATION);
+            }
+        }
+        
+        if (highVisualizer) {
+            highVisualizer.style.setProperty('--after-height', highEnergy + '%');
+            if (highEnergy > CLIPPING_THRESHOLD && !isHighClipping) {
+                isHighClipping = true;
+                highVisualizer.classList.add('clipping');
+                if (highClippingTimeout) clearTimeout(highClippingTimeout);
+                highClippingTimeout = setTimeout(() => {
+                    highVisualizer.classList.remove('clipping');
+                    isHighClipping = false;
+                    highClippingTimeout = null;
+                }, CLIPPING_FLASH_DURATION);
+            }
+        }
+        
+        animationFrameId = requestAnimationFrame(updateVisualizer);
     }
 
     // Audio Update Function (keeping existing logic)
@@ -225,6 +434,93 @@ document.addEventListener('DOMContentLoaded', () => {
             pitchShift.pitch = targetPitch;
         }
     }
+
+    // Toolbar: Load Button
+    loadBtn.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // Monitor function for repeat functionality
+    function checkTransportEnd() {
+        if (player && player.buffer && player.state === 'started' && Tone.Transport.state === 'started') {
+            // Use Tone.Transport.seconds for proper numeric comparison
+            if (Tone.Transport.seconds >= player.buffer.duration) {
+                if (isRepeatOn) {
+                    Tone.Transport.position = 0;
+                } else {
+                    Tone.Transport.stop();
+                    isPlaying = false;
+                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                    if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
+                }
+            }
+            if (isPlaying) {
+                requestAnimationFrame(checkTransportEnd);
+            }
+        }
+    }
+
+    // Toolbar: Play/Pause Button
+    playPauseBtn.addEventListener('click', () => {
+        if (typeof Tone === 'undefined') {
+            showNotification('Audio processing library not loaded.', 'error');
+            return;
+        }
+        
+        if (player && player.loaded) {
+            if (Tone.context.state !== 'running') {
+                Tone.context.resume();
+            }
+            
+            if (Tone.Transport.state !== 'started') {
+                Tone.Transport.start();
+                isPlaying = true;
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
+                if (playButton) playButton.innerHTML = '<i class="fas fa-pause"></i> Pause';
+                checkTransportEnd(); // Start monitoring for repeat
+            } else {
+                Tone.Transport.pause();
+                isPlaying = false;
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
+            }
+        }
+    });
+
+    // Toolbar: Stop Button
+    stopBtn.addEventListener('click', () => {
+        if (typeof Tone === 'undefined') return;
+        
+        if (Tone.Transport.state !== 'stopped') {
+            Tone.Transport.stop();
+            Tone.Transport.position = 0;
+            isPlaying = false;
+            playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+            if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
+        }
+    });
+
+    // Toolbar: Rewind Button
+    rewindBtn.addEventListener('click', () => {
+        if (typeof Tone === 'undefined') return;
+        
+        Tone.Transport.position = 0;
+        showNotification('Rewound to start', 'info');
+    });
+
+    // Toolbar: Repeat Button
+    repeatBtn.addEventListener('click', () => {
+        isRepeatOn = !isRepeatOn;
+        repeatBtn.setAttribute('data-repeat', isRepeatOn ? 'on' : 'off');
+        showNotification(`Repeat ${isRepeatOn ? 'enabled' : 'disabled'}`, 'info');
+    });
+
+    // Toolbar: Download Button
+    toolbarDownloadBtn.addEventListener('click', () => {
+        if (downloadButton) {
+            downloadButton.click();
+        }
+    });
 
     // File Input
     fileInput.addEventListener('change', (e) => {
@@ -264,13 +560,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         player = new Tone.Player(url, () => {
+            // Enable toolbar buttons
+            playPauseBtn.disabled = false;
+            stopBtn.disabled = false;
+            rewindBtn.disabled = false;
+            toolbarDownloadBtn.disabled = false;
+            
+            // Enable legacy buttons
             if (playButton) playButton.disabled = false;
             if (downloadButton) downloadButton.disabled = false;
+            
             player.sync().start(0);
+            
+            // Setup repeat functionality
+            player.loop = false;
+            player.onstop = () => {
+                // Handle manual stop
+                isPlaying = false;
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
+            };
             
             if (lufsNormalizeCheckbox.checked) {
                 applyLUFSNormalization();
             }
+            
+            // Setup analyser for visualizer
+            setupAnalyser();
             
             showNotification('Audio file loaded successfully!', 'success');
         });
