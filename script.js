@@ -362,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 
-                showNotification('Download started! Audio quality has been improved.', 'success');
+                showNotification('Download started!', 'success');
             } catch (error) {
                 console.error("Error processing audio:", error);
                 showNotification('Error processing audio', 'error');
@@ -476,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Check if lamejs is available
         if (typeof lamejs === 'undefined') {
-            console.error('lamejs library not loaded, falling back to WAV');
+            console.error('lamejs library not loaded. Please ensure the lamejs script is included. Falling back to WAV format.');
             return bufferToWave(ch0, ch1, sampleRate);
         }
 
