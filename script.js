@@ -375,7 +375,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Monitor function for repeat functionality
     function checkTransportEnd() {
         if (player && player.state === 'started' && Tone.Transport.state === 'started') {
-            if (Tone.Transport.position >= player.buffer.duration) {
+            // Use Tone.Transport.seconds for proper numeric comparison
+            if (Tone.Transport.seconds >= player.buffer.duration) {
                 if (isRepeatOn) {
                     Tone.Transport.position = 0;
                 } else {
