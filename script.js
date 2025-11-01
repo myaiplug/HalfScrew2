@@ -630,9 +630,13 @@ document.addEventListener('DOMContentLoaded', () => {
             downloadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
 
             try {
+                const playbackRate = parseFloat(speedKnob.value) / 100;
+                // Adjust rendering duration based on playback rate
+                // Slower playback (rate < 1) produces longer audio, faster playback (rate > 1) produces shorter audio
+                const renderDuration = player.buffer.duration / playbackRate;
+                
                 const buffer = await Tone.Offline(async (offline) => {
                     const offlinePlayer = new Tone.Player(player.buffer);
-                    const playbackRate = parseFloat(speedKnob.value) / 100;
                     offlinePlayer.playbackRate = playbackRate;
 
                     const timeStretchPitchCorrection = -12 * Math.log2(playbackRate);

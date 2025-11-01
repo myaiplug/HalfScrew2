@@ -253,7 +253,7 @@ body {
     }
     
     .toolbar-btn span {
-        font-size: 11px;
+        font-size: 10px;
     }
 }
 
@@ -275,7 +275,7 @@ body {
     }
     
     .toolbar-btn span {
-        font-size: 10px;
+        font-size: 9px;
     }
 }
 
@@ -817,7 +817,7 @@ body {
     .control-panel {
         flex-direction: column;
         padding: 40px 20px;
-        gap: 50px;
+        gap: 40px;
     }
 
     .knob-container {
@@ -826,17 +826,21 @@ body {
     }
 
     .knob-wrapper {
-        width: 120px;
-        height: 120px;
+        width: 112px;
+        height: 112px;
     }
 
     .knob-indicator {
-        height: 40px;
+        height: 36px;
+    }
+    
+    .marker {
+        font-size: 11px;
     }
 
     .cassette-icon svg {
-        width: 100px;
-        height: 66px;
+        width: 96px;
+        height: 64px;
     }
 
     .main-title {
@@ -862,8 +866,8 @@ body {
     }
 
     .control-panel {
-        padding: 30px 15px;
-        gap: 40px;
+        padding: 25px 12px;
+        gap: 30px;
     }
 
     .knob-container {
@@ -872,17 +876,25 @@ body {
     }
 
     .knob-wrapper {
-        width: 100px;
-        height: 100px;
+        width: 90px;
+        height: 90px;
     }
 
     .knob-indicator {
-        height: 35px;
+        height: 30px;
         width: 3px;
     }
 
     .label-value {
-        font-size: 24px;
+        font-size: 22px;
+    }
+    
+    .label-name {
+        font-size: 14px;
+    }
+    
+    .marker {
+        font-size: 10px;
     }
 
     .modal-content {
