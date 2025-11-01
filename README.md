@@ -3,5 +3,4 @@
 
 ### Online Demo
 
-Visit the live demo: [HalfScrew Audio Plugin](www.halfscrew.com)
-
+Visit the live demo: [www.halfscrew.com]

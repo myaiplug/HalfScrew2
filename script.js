@@ -664,7 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     offlinePlayer.connect(offlineDryGain);
                     offlinePlayer.connect(offlineWetGain);
                     offlinePlayer.start(0);
-                }, renderDuration);
+                }, player.buffer.duration / playbackRate);
 
                 // Use MP3 encoding for better quality and smaller file size
                 const ch0 = buffer.getChannelData(0);

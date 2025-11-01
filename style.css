@@ -238,13 +238,14 @@ body {
 
 @media (max-width: 768px) {
     .player-toolbar {
-        gap: 8px;
-        padding: 12px;
+        gap: 6px;
+        padding: 10px;
+        flex-wrap: nowrap;
     }
     
     .toolbar-btn {
         min-width: 65px;
-        padding: 10px 14px;
+        padding: 10px 12px;
     }
     
     .toolbar-btn i {
@@ -257,6 +258,12 @@ body {
 }
 
 @media (max-width: 480px) {
+    .player-toolbar {
+        gap: 4px;
+        padding: 8px;
+        flex-wrap: nowrap;
+    }
+    
     .toolbar-btn {
         min-width: 55px;
         padding: 8px 10px;
@@ -814,8 +821,8 @@ body {
     }
 
     .knob-container {
-        width: 160px;
-        height: 160px;
+        width: 144px;
+        height: 144px;
     }
 
     .knob-wrapper {
