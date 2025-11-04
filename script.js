@@ -356,12 +356,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     chopRateControl.addEventListener('input', (e) => {
-        chopRate = parseInt(e.target.value);
+        const value = parseInt(e.target.value);
+        // Map slider values to musical note divisions
+        const rateMap = {
+            4: 4,    // Quarter notes
+            5: 6,    // Eighth note triplets
+            6: 8,    // Eighth notes
+            7: 12,   // Sixteenth note triplets
+            8: 8,    // Eighth notes (default)
+            9: 12,   // Sixteenth note triplets
+            10: 16,  // Sixteenth notes
+            11: 12,  // Sixteenth note triplets
+            12: 12,  // Sixteenth note triplets
+            13: 16,  // Sixteenth notes
+            14: 16,  // Sixteenth notes
+            15: 16,  // Sixteenth notes
+            16: 16   // Sixteenth notes
+        };
+        
+        chopRate = rateMap[value] || value;
+        
         const rateLabels = {
             4: '1/4',
+            6: '1/8T',
             8: '1/8',
-            16: '1/16',
-            12: '1/12'
+            12: '1/16T',
+            16: '1/16'
         };
         chopRateValue.textContent = rateLabels[chopRate] || `1/${chopRate}`;
         
@@ -412,15 +432,22 @@ document.addEventListener('DOMContentLoaded', () => {
             if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
                 if (chopPhase === 0) {
                     // Chop on - reduce volume for the "chop" effect
-                    chopGain.gain.linearRampToValueAtTime(1 - (intensity * 0.7), Tone.context.currentTime + 0.01);
+                    // Create a more dramatic chop by reducing volume significantly
+                    const targetGain = 1 - (intensity * 0.85);
+                    chopGain.gain.cancelScheduledValues(Tone.context.currentTime);
+                    chopGain.gain.setValueAtTime(chopGain.gain.value, Tone.context.currentTime);
+                    chopGain.gain.linearRampToValueAtTime(targetGain, Tone.context.currentTime + 0.005);
                 } else {
-                    // Chop off - restore volume
-                    chopGain.gain.linearRampToValueAtTime(1, Tone.context.currentTime + 0.01);
+                    // Chop off - restore volume with quick attack for rhythmic effect
+                    chopGain.gain.cancelScheduledValues(Tone.context.currentTime);
+                    chopGain.gain.setValueAtTime(chopGain.gain.value, Tone.context.currentTime);
+                    chopGain.gain.linearRampToValueAtTime(1, Tone.context.currentTime + 0.005);
                 }
             }
             
-            // Update turntable rotation
-            turntableRotation = (turntableRotation + (chopPhase === 0 ? 15 : -15)) % 360;
+            // Update turntable rotation with more dramatic movement
+            const rotationAmount = intensity > 0.5 ? 20 : 10;
+            turntableRotation = (turntableRotation + (chopPhase === 0 ? rotationAmount : -rotationAmount)) % 360;
             if (turntableArm) {
                 turntableArm.style.transform = `rotate(${turntableRotation}deg)`;
                 turntableArm.style.transformOrigin = '100px 100px';
