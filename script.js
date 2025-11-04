@@ -91,6 +91,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const LOW_FREQ_RANGE_FACTOR = 0.05; // ~20-400 Hz range
     const MID_FREQ_RANGE_FACTOR = 0.2;  // ~400-2500 Hz range
     
+    // Chop effect constants
+    const TURNTABLE_ROTATION_LIGHT = 10; // degrees for light chop
+    const TURNTABLE_ROTATION_HEAVY = 20; // degrees for heavy chop
+    
     // Clipping timeout IDs for cleanup
     let lowClippingTimeout = null;
     let midClippingTimeout = null;
@@ -99,6 +103,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize buttons
     if (playButton) playButton.disabled = true;
     if (downloadButton) downloadButton.disabled = true;
+    
+    // Initialize turntable arm transform origin (set once)
+    if (turntableArm) {
+        turntableArm.style.transformOrigin = '100px 100px';
+    }
 
     // Audio engine variables (keeping existing Tone.js setup)
     let player;
@@ -357,33 +366,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     chopRateControl.addEventListener('input', (e) => {
         const value = parseInt(e.target.value);
-        // Map slider values to musical note divisions
+        // Map slider values to musical note divisions - simplified for clarity
         const rateMap = {
-            4: 4,    // Quarter notes
-            5: 6,    // Eighth note triplets
-            6: 8,    // Eighth notes
-            7: 12,   // Sixteenth note triplets
-            8: 8,    // Eighth notes (default)
-            9: 12,   // Sixteenth note triplets
-            10: 16,  // Sixteenth notes
-            11: 12,  // Sixteenth note triplets
-            12: 12,  // Sixteenth note triplets
-            13: 16,  // Sixteenth notes
-            14: 16,  // Sixteenth notes
-            15: 16,  // Sixteenth notes
-            16: 16   // Sixteenth notes
+            4: { rate: 4, label: '1/4' },      // Quarter notes
+            5: { rate: 6, label: '1/8T' },     // Eighth note triplets
+            6: { rate: 8, label: '1/8' },      // Eighth notes
+            7: { rate: 8, label: '1/8' },      // Eighth notes
+            8: { rate: 8, label: '1/8' },      // Eighth notes (default)
+            9: { rate: 12, label: '1/16T' },   // Sixteenth note triplets
+            10: { rate: 12, label: '1/16T' },  // Sixteenth note triplets
+            11: { rate: 12, label: '1/16T' },  // Sixteenth note triplets
+            12: { rate: 16, label: '1/16' },   // Sixteenth notes
+            13: { rate: 16, label: '1/16' },   // Sixteenth notes
+            14: { rate: 16, label: '1/16' },   // Sixteenth notes
+            15: { rate: 16, label: '1/16' },   // Sixteenth notes
+            16: { rate: 16, label: '1/16' }    // Sixteenth notes
         };
         
-        chopRate = rateMap[value] || value;
-        
-        const rateLabels = {
-            4: '1/4',
-            6: '1/8T',
-            8: '1/8',
-            12: '1/16T',
-            16: '1/16'
-        };
-        chopRateValue.textContent = rateLabels[chopRate] || `1/${chopRate}`;
+        const mapping = rateMap[value] || { rate: 8, label: '1/8' };
+        chopRate = mapping.rate;
+        chopRateValue.textContent = mapping.label;
         
         // Restart chop effect with new rate if active
         if (chopInterval && isPlaying) {
@@ -446,11 +448,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             // Update turntable rotation with more dramatic movement
-            const rotationAmount = intensity > 0.5 ? 20 : 10;
+            const rotationAmount = intensity > 0.5 ? TURNTABLE_ROTATION_HEAVY : TURNTABLE_ROTATION_LIGHT;
             turntableRotation = (turntableRotation + (chopPhase === 0 ? rotationAmount : -rotationAmount)) % 360;
             if (turntableArm) {
                 turntableArm.style.transform = `rotate(${turntableRotation}deg)`;
-                turntableArm.style.transformOrigin = '100px 100px';
             }
         }, (chopDuration * 1000) / 2); // Divide by 2 for on/off cycle
     }
