@@ -153,6 +153,64 @@
                 </div>
             </div>
         </div>
+
+        <!-- Chop Effect Section -->
+        <div class="chop-section">
+            <h3 class="chop-title">CHOP EFFECT <span class="houston-badge">HOUSTON STYLE</span></h3>
+            <div class="chop-controls">
+                <!-- Chop Crossfader -->
+                <div class="crossfader-container">
+                    <label for="chop-crossfader" class="crossfader-label">
+                        <span class="label-left">OFF</span>
+                        <span class="label-center">CROSSFADER</span>
+                        <span class="label-right">FULL</span>
+                    </label>
+                    <input type="range" id="chop-crossfader" class="crossfader" min="0" max="100" value="0">
+                    <div class="crossfader-value" id="crossfader-value">0%</div>
+                </div>
+                
+                <!-- Chop Rate Control -->
+                <div class="chop-rate-control">
+                    <label for="chop-rate">CHOP RATE</label>
+                    <input type="range" id="chop-rate" min="4" max="16" value="8" step="1">
+                    <div class="chop-rate-value" id="chop-rate-value">1/8</div>
+                </div>
+                
+                <!-- Turntable Visual -->
+                <div class="turntable-container" id="turntable-container">
+                    <svg class="turntable" id="turntable" width="200" height="200" viewBox="0 0 200 200">
+                        <defs>
+                            <radialGradient id="vinylGradient">
+                                <stop offset="0%" style="stop-color:#1a1a1a;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#0a0a0a;stop-opacity:1" />
+                            </radialGradient>
+                            <linearGradient id="labelGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:var(--cassette-color-1);stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:var(--cassette-color-2);stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <!-- Vinyl record -->
+                        <circle cx="100" cy="100" r="85" fill="url(#vinylGradient)" stroke="#333" stroke-width="2"/>
+                        <!-- Grooves -->
+                        <circle cx="100" cy="100" r="75" fill="none" stroke="#2a2a2a" stroke-width="0.5"/>
+                        <circle cx="100" cy="100" r="65" fill="none" stroke="#2a2a2a" stroke-width="0.5"/>
+                        <circle cx="100" cy="100" r="55" fill="none" stroke="#2a2a2a" stroke-width="0.5"/>
+                        <circle cx="100" cy="100" r="45" fill="none" stroke="#2a2a2a" stroke-width="0.5"/>
+                        <!-- Center label -->
+                        <circle cx="100" cy="100" r="35" fill="url(#labelGradient)"/>
+                        <circle cx="100" cy="100" r="30" fill="none" stroke="#000" stroke-width="1" opacity="0.3"/>
+                        <!-- Center hole -->
+                        <circle cx="100" cy="100" r="8" fill="#000"/>
+                        <!-- Reference mark that rotates -->
+                        <g id="turntable-arm" transform-origin="100 100">
+                            <line x1="100" y1="100" x2="100" y2="30" stroke="var(--accent-color)" stroke-width="3" stroke-linecap="round"/>
+                            <circle cx="100" cy="30" r="4" fill="var(--accent-color)"/>
+                        </g>
+                    </svg>
+                    <div class="turntable-status" id="turntable-status">READY</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Bottom tagline -->

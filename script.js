@@ -52,10 +52,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cassette icon
     const cassetteIcon = document.getElementById('cassette-icon');
     
+    // Chop Effect controls
+    const chopCrossfader = document.getElementById('chop-crossfader');
+    const crossfaderValue = document.getElementById('crossfader-value');
+    const chopRateControl = document.getElementById('chop-rate');
+    const chopRateValue = document.getElementById('chop-rate-value');
+    const turntable = document.getElementById('turntable');
+    const turntableArm = document.getElementById('turntable-arm');
+    const turntableStatus = document.getElementById('turntable-status');
+    
     // State
     let isPlaying = false;
     let isRepeatOn = false;
     let isEqBypassed = false;
+    let chopIntensity = 0;
+    let chopRate = 8; // 1/8 note
+    let chopInterval = null;
+    let chopPhase = 0;
+    let turntableRotation = 0;
     
     // Visualizer state
     let lowEnergy = 0;
@@ -93,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let dryGain;
     let lowShelf;
     let limiter;
+    let chopGain; // For chop effect volume control
     
     const smoothingTime = 0.05;
 
@@ -115,9 +130,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Use less aggressive limiter threshold to prevent distortion
         limiter = new Tone.Limiter(-0.1);
         
+        // Chop effect gain control
+        chopGain = new Tone.Gain(1);
+        
         // Audio chain
         pitchShift.connect(lowShelf);
-        lowShelf.connect(limiter);
+        lowShelf.connect(chopGain); // Insert chop gain before limiter
+        chopGain.connect(limiter);
         limiter.toDestination();
         
         wetDry = new Tone.Gain(0.5).connect(pitchShift);
@@ -320,6 +339,113 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Chop Effect Controls
+    chopCrossfader.addEventListener('input', (e) => {
+        chopIntensity = parseFloat(e.target.value);
+        crossfaderValue.textContent = Math.round(chopIntensity) + '%';
+        
+        // Update turntable visual state
+        updateTurntableStatus();
+        
+        // Start or stop chop effect
+        if (chopIntensity > 0 && isPlaying) {
+            startChopEffect();
+        } else {
+            stopChopEffect();
+        }
+    });
+
+    chopRateControl.addEventListener('input', (e) => {
+        chopRate = parseInt(e.target.value);
+        const rateLabels = {
+            4: '1/4',
+            8: '1/8',
+            16: '1/16',
+            12: '1/12'
+        };
+        chopRateValue.textContent = rateLabels[chopRate] || `1/${chopRate}`;
+        
+        // Restart chop effect with new rate if active
+        if (chopInterval && isPlaying) {
+            startChopEffect();
+        }
+    });
+
+    function updateTurntableStatus() {
+        if (!turntableStatus) return;
+        
+        if (chopIntensity === 0) {
+            turntableStatus.textContent = 'READY';
+            turntable?.classList.remove('chopping', 'spinning');
+        } else if (chopIntensity < 50) {
+            turntableStatus.textContent = 'LIGHT CHOP';
+            turntable?.classList.remove('spinning');
+            turntable?.classList.add('chopping');
+        } else {
+            turntableStatus.textContent = 'FULL CHOP';
+            turntable?.classList.add('chopping');
+        }
+    }
+
+    function startChopEffect() {
+        if (chopInterval) {
+            clearInterval(chopInterval);
+        }
+        
+        if (chopIntensity === 0 || !isPlaying || !chopGain) return;
+        
+        // Calculate chop interval based on tempo and rate
+        // Assuming 120 BPM base tempo, adjust as needed
+        const bpm = 120;
+        const beatDuration = 60 / bpm; // seconds per beat
+        const chopDuration = (beatDuration * 4) / chopRate; // Duration for each chop cycle
+        
+        chopInterval = setInterval(() => {
+            if (!chopGain || !isPlaying) {
+                stopChopEffect();
+                return;
+            }
+            
+            chopPhase = (chopPhase + 1) % 2;
+            const intensity = chopIntensity / 100;
+            
+            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+                if (chopPhase === 0) {
+                    // Chop on - reduce volume for the "chop" effect
+                    chopGain.gain.linearRampToValueAtTime(1 - (intensity * 0.7), Tone.context.currentTime + 0.01);
+                } else {
+                    // Chop off - restore volume
+                    chopGain.gain.linearRampToValueAtTime(1, Tone.context.currentTime + 0.01);
+                }
+            }
+            
+            // Update turntable rotation
+            turntableRotation = (turntableRotation + (chopPhase === 0 ? 15 : -15)) % 360;
+            if (turntableArm) {
+                turntableArm.style.transform = `rotate(${turntableRotation}deg)`;
+                turntableArm.style.transformOrigin = '100px 100px';
+            }
+        }, (chopDuration * 1000) / 2); // Divide by 2 for on/off cycle
+    }
+
+    function stopChopEffect() {
+        if (chopInterval) {
+            clearInterval(chopInterval);
+            chopInterval = null;
+        }
+        
+        // Reset gain to normal
+        if (chopGain) {
+            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+                chopGain.gain.linearRampToValueAtTime(1, Tone.context.currentTime + smoothingTime);
+            } else {
+                chopGain.gain.value = 1;
+            }
+        }
+        
+        chopPhase = 0;
+    }
+
     // Setup audio analyser for visualizer
     function setupAnalyser() {
         if (!player || typeof Tone === 'undefined' || !limiter) return;
@@ -478,11 +604,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 playPauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
                 if (playButton) playButton.innerHTML = '<i class="fas fa-pause"></i> Pause';
                 checkTransportEnd(); // Start monitoring for repeat
+                
+                // Start chop effect if crossfader is not at 0
+                if (chopIntensity > 0) {
+                    startChopEffect();
+                }
             } else {
                 Tone.Transport.pause();
                 isPlaying = false;
                 playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
                 if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
+                
+                // Stop chop effect when pausing
+                stopChopEffect();
             }
         }
     });
@@ -497,6 +631,9 @@ document.addEventListener('DOMContentLoaded', () => {
             isPlaying = false;
             playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
             if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
+            
+            // Stop chop effect
+            stopChopEffect();
         }
     });
 
@@ -611,9 +748,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (Tone.Transport.state !== 'started') {
                     Tone.Transport.start();
                     playButton.innerHTML = '<i class="fas fa-pause"></i> Pause';
+                    isPlaying = true;
+                    
+                    // Start chop effect if crossfader is not at 0
+                    if (chopIntensity > 0) {
+                        startChopEffect();
+                    }
                 } else {
                     Tone.Transport.pause();
                     playButton.innerHTML = '<i class="fas fa-play"></i> Play';
+                    isPlaying = false;
+                    
+                    // Stop chop effect when pausing
+                    stopChopEffect();
                 }
             }
         });
