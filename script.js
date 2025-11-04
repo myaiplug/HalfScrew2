@@ -52,10 +52,46 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cassette icon
     const cassetteIcon = document.getElementById('cassette-icon');
     
+    // Side Panel controls
+    const sidePanelToggle = document.getElementById('side-panel-toggle');
+    const sideEffectsPanel = document.getElementById('side-effects-panel');
+    const sidePanelClose = document.getElementById('side-panel-close');
+    
+    // Effect controls
+    const reverbMix = document.getElementById('reverb-mix');
+    const reverbValue = document.getElementById('reverb-value');
+    const reverbDecay = document.getElementById('reverb-decay');
+    const reverbDecayValue = document.getElementById('reverb-decay-value');
+    
+    const delayMix = document.getElementById('delay-mix');
+    const delayValue = document.getElementById('delay-value');
+    const delayTime = document.getElementById('delay-time');
+    const delayTimeValue = document.getElementById('delay-time-value');
+    const delayFeedback = document.getElementById('delay-feedback');
+    const delayFeedbackValue = document.getElementById('delay-feedback-value');
+    
+    const phaserMix = document.getElementById('phaser-mix');
+    const phaserValue = document.getElementById('phaser-value');
+    const phaserFreq = document.getElementById('phaser-freq');
+    const phaserFreqValue = document.getElementById('phaser-freq-value');
+    const phaserDepth = document.getElementById('phaser-depth');
+    const phaserDepthValue = document.getElementById('phaser-depth-value');
+    
+    const chorusMix = document.getElementById('chorus-mix');
+    const chorusValue = document.getElementById('chorus-value');
+    const chorusFreq = document.getElementById('chorus-freq');
+    const chorusFreqValue = document.getElementById('chorus-freq-value');
+    const chorusDepth = document.getElementById('chorus-depth');
+    const chorusDepthValue = document.getElementById('chorus-depth-value');
+    
+    const stereoWidth = document.getElementById('stereo-width');
+    const stereoWidthValue = document.getElementById('stereo-width-value');
+    
     // State
     let isPlaying = false;
     let isRepeatOn = false;
     let isEqBypassed = false;
+    let isSidePanelOpen = false;
     
     // Visualizer state
     let lowEnergy = 0;
@@ -94,16 +130,34 @@ document.addEventListener('DOMContentLoaded', () => {
     let lowShelf;
     let limiter;
     
-    const smoothingTime = 0.05;
+    // Effect units
+    let reverb;
+    let reverbWet;
+    let delay;
+    let delayWet;
+    let phaser;
+    let phaserWet;
+    let chorus;
+    let chorusWet;
+    let stereoWidener;
+    
+    const smoothingTime = 0.15; // Increased for smoother knob movement and artifact prevention
 
     // Check if Tone.js is available
     if (typeof Tone === 'undefined') {
         console.warn('Tone.js not loaded. Audio processing will be unavailable.');
         showNotification('Audio library not loaded. Some features may not work.', 'warning');
     } else {
-        // Initialize Tone.js components
-        pitchShift = new Tone.PitchShift({ pitch: 0 });
+        // Initialize Tone.js components with pro-quality settings
+        // High-quality pitch shifting with window size optimization
+        pitchShift = new Tone.PitchShift({ 
+            pitch: 0,
+            windowSize: 0.1, // Smaller window for better transient response
+            delayTime: 0, // Minimize latency
+            feedback: 0 // No feedback for cleaner sound
+        });
         
+        // Enhanced EQ with better frequency separation
         lowShelf = new Tone.EQ3({
             low: 0,
             mid: 0,
@@ -112,13 +166,64 @@ document.addEventListener('DOMContentLoaded', () => {
             highFrequency: 2500
         });
         
-        // Use less aggressive limiter threshold to prevent distortion
-        limiter = new Tone.Limiter(-0.1);
+        // Initialize effects with improved quality settings for "chopped and screwed" sound
+        reverb = new Tone.Reverb({
+            decay: 1.5,
+            preDelay: 0.01
+        }).toDestination();
+        reverbWet = new Tone.Gain(0);
         
-        // Audio chain
+        // Tape-style delay for classic chopped & screwed feel
+        delay = new Tone.FeedbackDelay({
+            delayTime: 0.25,
+            feedback: 0.3,
+            maxDelay: 1
+        }).toDestination();
+        delayWet = new Tone.Gain(0);
+        
+        // Sweeping phaser for movement
+        phaser = new Tone.Phaser({
+            frequency: 0.5,
+            octaves: 3,
+            baseFrequency: 350
+        }).toDestination();
+        phaserWet = new Tone.Gain(0);
+        
+        // Chorus for depth and width
+        chorus = new Tone.Chorus({
+            frequency: 1.5,
+            delayTime: 3.5,
+            depth: 0.7,
+            spread: 180
+        }).toDestination();
+        chorus.start();
+        chorusWet = new Tone.Gain(0);
+        
+        // Stereo widening for spaciousness
+        stereoWidener = new Tone.StereoWidener(0).toDestination();
+        
+        // Professional limiter with gentle threshold to preserve dynamics
+        limiter = new Tone.Limiter(-0.5); // More headroom for better quality
+        
+        // Enhanced audio chain with effects
         pitchShift.connect(lowShelf);
         lowShelf.connect(limiter);
         limiter.toDestination();
+        
+        // Connect effects in parallel
+        limiter.connect(reverbWet);
+        reverbWet.connect(reverb);
+        
+        limiter.connect(delayWet);
+        delayWet.connect(delay);
+        
+        limiter.connect(phaserWet);
+        phaserWet.connect(phaser);
+        
+        limiter.connect(chorusWet);
+        chorusWet.connect(chorus);
+        
+        limiter.connect(stereoWidener);
         
         wetDry = new Tone.Gain(0.5).connect(pitchShift);
         dryGain = new Tone.Gain(0.5).toDestination();
@@ -643,7 +748,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     const userPitchBend = parseFloat(pitchKnob.value);
                     const totalPitchShift = userPitchBend + timeStretchPitchCorrection;
 
-                    const offlinePitchShift = new Tone.PitchShift({ pitch: totalPitchShift });
+                    // High-quality offline processing with same settings as real-time
+                    const offlinePitchShift = new Tone.PitchShift({ 
+                        pitch: totalPitchShift,
+                        windowSize: 0.1,
+                        delayTime: 0,
+                        feedback: 0
+                    });
                     const offlineEQ = new Tone.EQ3({
                         low: parseFloat(lowEqKnob.value),
                         mid: parseFloat(midEqKnob.value),
@@ -651,12 +762,62 @@ document.addEventListener('DOMContentLoaded', () => {
                         lowFrequency: 400,
                         highFrequency: 2500
                     });
-                    // Use less aggressive limiter threshold to prevent distortion
-                    const offlineLimiter = new Tone.Limiter(-0.1);
+                    // Professional limiter with better headroom
+                    const offlineLimiter = new Tone.Limiter(-0.5);
 
+                    // Create offline effects with current settings
+                    const offlineReverb = new Tone.Reverb({
+                        decay: reverb ? reverb.decay : 1.5,
+                        preDelay: 0.01
+                    }).connect(offline.destination);
+                    const offlineReverbWet = new Tone.Gain(reverbWet ? reverbWet.gain.value : 0);
+
+                    const offlineDelay = new Tone.FeedbackDelay({
+                        delayTime: delay ? delay.delayTime.value : 0.25,
+                        feedback: delay ? delay.feedback.value : 0.3,
+                        maxDelay: 1
+                    }).connect(offline.destination);
+                    const offlineDelayWet = new Tone.Gain(delayWet ? delayWet.gain.value : 0);
+
+                    const offlinePhaser = new Tone.Phaser({
+                        frequency: phaser ? phaser.frequency.value : 0.5,
+                        octaves: phaser ? phaser.octaves : 3,
+                        baseFrequency: 350
+                    }).connect(offline.destination);
+                    const offlinePhaserWet = new Tone.Gain(phaserWet ? phaserWet.gain.value : 0);
+
+                    const offlineChorus = new Tone.Chorus({
+                        frequency: chorus ? chorus.frequency.value : 1.5,
+                        delayTime: 3.5,
+                        depth: 0.7, // Use default value as Tone.js Chorus depth property is not directly accessible
+                        spread: 180
+                    }).connect(offline.destination);
+                    offlineChorus.start();
+                    const offlineChorusWet = new Tone.Gain(chorusWet ? chorusWet.gain.value : 0);
+
+                    const offlineStereoWidener = new Tone.StereoWidener(
+                        stereoWidener ? stereoWidener.width.value : 0
+                    ).connect(offline.destination);
+
+                    // Build audio chain
                     offlinePitchShift.connect(offlineEQ);
                     offlineEQ.connect(offlineLimiter);
                     offlineLimiter.connect(offline.destination);
+
+                    // Connect effects in parallel
+                    offlineLimiter.connect(offlineReverbWet);
+                    offlineReverbWet.connect(offlineReverb);
+
+                    offlineLimiter.connect(offlineDelayWet);
+                    offlineDelayWet.connect(offlineDelay);
+
+                    offlineLimiter.connect(offlinePhaserWet);
+                    offlinePhaserWet.connect(offlinePhaser);
+
+                    offlineLimiter.connect(offlineChorusWet);
+                    offlineChorusWet.connect(offlineChorus);
+
+                    offlineLimiter.connect(offlineStereoWidener);
 
                     const offlineWetGain = new Tone.Gain(parseFloat(wetDryMixSlider.value)).connect(offlinePitchShift);
                     const offlineDryGain = new Tone.Gain(1 - parseFloat(wetDryMixSlider.value)).connect(offline.destination);
@@ -867,5 +1028,162 @@ document.addEventListener('DOMContentLoaded', () => {
             notification.style.animation = 'slideUp 0.3s ease';
             setTimeout(() => notification.remove(), 300);
         }, 3000);
+    }
+
+    // Side Panel Toggle
+    if (sidePanelToggle) {
+        sidePanelToggle.addEventListener('click', () => {
+            isSidePanelOpen = !isSidePanelOpen;
+            sideEffectsPanel.classList.toggle('open', isSidePanelOpen);
+            sidePanelToggle.classList.toggle('active', isSidePanelOpen);
+        });
+    }
+
+    if (sidePanelClose) {
+        sidePanelClose.addEventListener('click', () => {
+            isSidePanelOpen = false;
+            sideEffectsPanel.classList.remove('open');
+            sidePanelToggle.classList.remove('active');
+        });
+    }
+
+    // Effect Controls - Reverb
+    if (reverbMix && reverbWet) {
+        reverbMix.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value) / 100;
+            reverbValue.textContent = Math.round(value * 100) + '%';
+            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+                reverbWet.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
+            } else if (reverbWet) {
+                reverbWet.gain.value = value;
+            }
+        });
+    }
+
+    if (reverbDecay && reverb) {
+        reverbDecay.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            reverbDecayValue.textContent = value.toFixed(1) + 's';
+            if (reverb) {
+                reverb.decay = value;
+            }
+        });
+    }
+
+    // Effect Controls - Delay
+    if (delayMix && delayWet) {
+        delayMix.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value) / 100;
+            delayValue.textContent = Math.round(value * 100) + '%';
+            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+                delayWet.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
+            } else if (delayWet) {
+                delayWet.gain.value = value;
+            }
+        });
+    }
+
+    if (delayTime && delay) {
+        delayTime.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            delayTimeValue.textContent = value.toFixed(2) + 's';
+            if (delay) {
+                delay.delayTime.value = value;
+            }
+        });
+    }
+
+    if (delayFeedback && delay) {
+        delayFeedback.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            delayFeedbackValue.textContent = value.toFixed(2);
+            if (delay) {
+                delay.feedback.value = value;
+            }
+        });
+    }
+
+    // Effect Controls - Phaser
+    if (phaserMix && phaserWet) {
+        phaserMix.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value) / 100;
+            phaserValue.textContent = Math.round(value * 100) + '%';
+            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+                phaserWet.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
+            } else if (phaserWet) {
+                phaserWet.gain.value = value;
+            }
+        });
+    }
+
+    if (phaserFreq && phaser) {
+        phaserFreq.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            phaserFreqValue.textContent = value.toFixed(1) + ' Hz';
+            if (phaser) {
+                phaser.frequency.value = value;
+            }
+        });
+    }
+
+    if (phaserDepth && phaser) {
+        const MAX_PHASER_OCTAVES = 5; // Maximum octaves for phaser depth
+        phaserDepth.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            phaserDepthValue.textContent = value.toFixed(2);
+            // Phaser depth is controlled by octaves in Tone.js
+            if (phaser) {
+                phaser.octaves = value * MAX_PHASER_OCTAVES; // Scale 0-1 to 0-5 octaves
+            }
+        });
+    }
+
+    // Effect Controls - Chorus
+    if (chorusMix && chorusWet) {
+        chorusMix.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value) / 100;
+            chorusValue.textContent = Math.round(value * 100) + '%';
+            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+                chorusWet.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
+            } else if (chorusWet) {
+                chorusWet.gain.value = value;
+            }
+        });
+    }
+
+    if (chorusFreq && chorus) {
+        chorusFreq.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            chorusFreqValue.textContent = value.toFixed(1) + ' Hz';
+            if (chorus) {
+                chorus.frequency.value = value;
+            }
+        });
+    }
+
+    if (chorusDepth && chorus) {
+        chorusDepth.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            chorusDepthValue.textContent = value.toFixed(2);
+            if (chorus) {
+                chorus.depth = value;
+            }
+        });
+    }
+
+    // Effect Controls - Stereo Width
+    if (stereoWidth && stereoWidener) {
+        stereoWidth.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value) / 100;
+            stereoWidthValue.textContent = Math.round(value * 100) + '%';
+            // Stereo widener: Map 0-100% slider to -1 to +1 range
+            // 0% = -1 (inverted stereo), 50% = 0 (normal), 100% = +1 (wide)
+            const width = value * 2 - 1;
+            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+                stereoWidener.width.linearRampToValueAtTime(width, Tone.context.currentTime + smoothingTime);
+            } else if (stereoWidener) {
+                stereoWidener.width.value = width;
+            }
+        });
     }
 });
