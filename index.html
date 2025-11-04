@@ -92,12 +92,12 @@
             <div class="control-group">
                 <div class="knob-container">
                     <div class="knob-markers">
-                        <span class="marker marker-min">75%</span>
+                        <span class="marker marker-min">50%</span>
                         <span class="marker marker-mid">100%</span>
-                        <span class="marker marker-max">125%</span>
+                        <span class="marker marker-max">200%</span>
                     </div>
                     <div class="knob-wrapper">
-                        <input type="range" id="speed-knob" min="50" max="150" value="100" class="input-knob" data-diameter="120">
+                        <input type="range" id="speed-knob" min="50" max="200" value="100" class="input-knob" data-diameter="120">
                         <div class="knob-indicator"></div>
                     </div>
                 </div>
@@ -138,18 +138,124 @@
             <div class="control-group">
                 <div class="knob-container">
                     <div class="knob-markers">
-                        <span class="marker marker-min">-6</span>
+                        <span class="marker marker-min">-12</span>
                         <span class="marker marker-mid">0</span>
-                        <span class="marker marker-max">+6</span>
+                        <span class="marker marker-max">+12</span>
                     </div>
                     <div class="knob-wrapper">
-                        <input type="range" id="pitch-knob" min="-6" max="6" value="0" step="0.1" class="input-knob" data-diameter="120">
+                        <input type="range" id="pitch-knob" min="-12" max="12" value="0" step="0.1" class="input-knob" data-diameter="120">
                         <div class="knob-indicator"></div>
                     </div>
                 </div>
                 <div class="control-label">
                     <div class="label-name">PITCH</div>
                     <div class="label-value" id="pitch-value">0.0 st</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Side Panel Toggle Button -->
+        <button class="side-panel-toggle" id="side-panel-toggle" aria-label="Toggle Effects Panel">
+            <i class="fas fa-sliders-h"></i>
+            <span>FX</span>
+        </button>
+    </div>
+
+    <!-- Side Effects Panel -->
+    <div class="side-effects-panel" id="side-effects-panel">
+        <div class="side-panel-header">
+            <h3>EFFECTS</h3>
+            <button class="side-panel-close" id="side-panel-close" aria-label="Close Effects Panel">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="side-panel-content">
+            <!-- Reverb Control -->
+            <div class="effect-control">
+                <label class="effect-label">REVERB</label>
+                <div class="effect-slider-container">
+                    <input type="range" id="reverb-mix" class="effect-slider" min="0" max="100" value="0" step="1">
+                    <span class="effect-value" id="reverb-value">0%</span>
+                </div>
+                <div class="effect-params">
+                    <div class="param-group">
+                        <label>Decay</label>
+                        <input type="range" id="reverb-decay" class="param-slider" min="0.1" max="10" value="1.5" step="0.1">
+                        <span id="reverb-decay-value">1.5s</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delay Control -->
+            <div class="effect-control">
+                <label class="effect-label">DELAY</label>
+                <div class="effect-slider-container">
+                    <input type="range" id="delay-mix" class="effect-slider" min="0" max="100" value="0" step="1">
+                    <span class="effect-value" id="delay-value">0%</span>
+                </div>
+                <div class="effect-params">
+                    <div class="param-group">
+                        <label>Time</label>
+                        <input type="range" id="delay-time" class="param-slider" min="0" max="1" value="0.25" step="0.01">
+                        <span id="delay-time-value">0.25s</span>
+                    </div>
+                    <div class="param-group">
+                        <label>Feedback</label>
+                        <input type="range" id="delay-feedback" class="param-slider" min="0" max="0.9" value="0.3" step="0.05">
+                        <span id="delay-feedback-value">0.30</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phaser Control -->
+            <div class="effect-control">
+                <label class="effect-label">PHASER</label>
+                <div class="effect-slider-container">
+                    <input type="range" id="phaser-mix" class="effect-slider" min="0" max="100" value="0" step="1">
+                    <span class="effect-value" id="phaser-value">0%</span>
+                </div>
+                <div class="effect-params">
+                    <div class="param-group">
+                        <label>Frequency</label>
+                        <input type="range" id="phaser-freq" class="param-slider" min="0.1" max="10" value="0.5" step="0.1">
+                        <span id="phaser-freq-value">0.5 Hz</span>
+                    </div>
+                    <div class="param-group">
+                        <label>Depth</label>
+                        <input type="range" id="phaser-depth" class="param-slider" min="0" max="1" value="0.5" step="0.05">
+                        <span id="phaser-depth-value">0.50</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chorus (Flanger) Control -->
+            <div class="effect-control">
+                <label class="effect-label">CHORUS</label>
+                <div class="effect-slider-container">
+                    <input type="range" id="chorus-mix" class="effect-slider" min="0" max="100" value="0" step="1">
+                    <span class="effect-value" id="chorus-value">0%</span>
+                </div>
+                <div class="effect-params">
+                    <div class="param-group">
+                        <label>Frequency</label>
+                        <input type="range" id="chorus-freq" class="param-slider" min="0.1" max="10" value="1.5" step="0.1">
+                        <span id="chorus-freq-value">1.5 Hz</span>
+                    </div>
+                    <div class="param-group">
+                        <label>Depth</label>
+                        <input type="range" id="chorus-depth" class="param-slider" min="0" max="1" value="0.7" step="0.05">
+                        <span id="chorus-depth-value">0.70</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stereo Width Control -->
+            <div class="effect-control">
+                <label class="effect-label">STEREO WIDTH</label>
+                <div class="effect-slider-container">
+                    <input type="range" id="stereo-width" class="effect-slider" min="0" max="100" value="50" step="1">
+                    <span class="effect-value" id="stereo-width-value">50%</span>
                 </div>
             </div>
         </div>
