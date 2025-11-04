@@ -789,7 +789,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const offlineChorus = new Tone.Chorus({
                         frequency: chorus ? chorus.frequency.value : 1.5,
                         delayTime: 3.5,
-                        depth: chorus ? chorus.depth : 0.7,
+                        depth: 0.7, // Use default value as Tone.js Chorus depth property is not directly accessible
                         spread: 180
                     }).connect(offline.destination);
                     offlineChorus.start();
@@ -1127,12 +1127,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (phaserDepth && phaser) {
+        const MAX_PHASER_OCTAVES = 5; // Maximum octaves for phaser depth
         phaserDepth.addEventListener('input', (e) => {
             const value = parseFloat(e.target.value);
             phaserDepthValue.textContent = value.toFixed(2);
             // Phaser depth is controlled by octaves in Tone.js
             if (phaser) {
-                phaser.octaves = value * 5; // Scale 0-1 to 0-5 octaves
+                phaser.octaves = value * MAX_PHASER_OCTAVES; // Scale 0-1 to 0-5 octaves
             }
         });
     }
@@ -1175,8 +1176,9 @@ document.addEventListener('DOMContentLoaded', () => {
         stereoWidth.addEventListener('input', (e) => {
             const value = parseFloat(e.target.value) / 100;
             stereoWidthValue.textContent = Math.round(value * 100) + '%';
-            // Stereo widener: 0 = mono, 0.5 = normal, 1 = wide
-            const width = value * 2 - 1; // Map 0-100% to -1 to 1
+            // Stereo widener: Map 0-100% slider to -1 to +1 range
+            // 0% = -1 (inverted stereo), 50% = 0 (normal), 100% = +1 (wide)
+            const width = value * 2 - 1;
             if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
                 stereoWidener.width.linearRampToValueAtTime(width, Tone.context.currentTime + smoothingTime);
             } else if (stereoWidener) {
