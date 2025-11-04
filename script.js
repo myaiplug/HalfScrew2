@@ -148,9 +148,16 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('Tone.js not loaded. Audio processing will be unavailable.');
         showNotification('Audio library not loaded. Some features may not work.', 'warning');
     } else {
-        // Initialize Tone.js components
-        pitchShift = new Tone.PitchShift({ pitch: 0 });
+        // Initialize Tone.js components with pro-quality settings
+        // High-quality pitch shifting with window size optimization
+        pitchShift = new Tone.PitchShift({ 
+            pitch: 0,
+            windowSize: 0.1, // Smaller window for better transient response
+            delayTime: 0, // Minimize latency
+            feedback: 0 // No feedback for cleaner sound
+        });
         
+        // Enhanced EQ with better frequency separation
         lowShelf = new Tone.EQ3({
             low: 0,
             mid: 0,
@@ -159,13 +166,14 @@ document.addEventListener('DOMContentLoaded', () => {
             highFrequency: 2500
         });
         
-        // Initialize effects with improved quality settings
+        // Initialize effects with improved quality settings for "chopped and screwed" sound
         reverb = new Tone.Reverb({
             decay: 1.5,
             preDelay: 0.01
         }).toDestination();
         reverbWet = new Tone.Gain(0);
         
+        // Tape-style delay for classic chopped & screwed feel
         delay = new Tone.FeedbackDelay({
             delayTime: 0.25,
             feedback: 0.3,
@@ -173,6 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }).toDestination();
         delayWet = new Tone.Gain(0);
         
+        // Sweeping phaser for movement
         phaser = new Tone.Phaser({
             frequency: 0.5,
             octaves: 3,
@@ -180,6 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }).toDestination();
         phaserWet = new Tone.Gain(0);
         
+        // Chorus for depth and width
         chorus = new Tone.Chorus({
             frequency: 1.5,
             delayTime: 3.5,
@@ -189,10 +199,11 @@ document.addEventListener('DOMContentLoaded', () => {
         chorus.start();
         chorusWet = new Tone.Gain(0);
         
+        // Stereo widening for spaciousness
         stereoWidener = new Tone.StereoWidener(0).toDestination();
         
-        // Use less aggressive limiter threshold to prevent distortion
-        limiter = new Tone.Limiter(-0.1);
+        // Professional limiter with gentle threshold to preserve dynamics
+        limiter = new Tone.Limiter(-0.5); // More headroom for better quality
         
         // Enhanced audio chain with effects
         pitchShift.connect(lowShelf);
@@ -737,7 +748,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     const userPitchBend = parseFloat(pitchKnob.value);
                     const totalPitchShift = userPitchBend + timeStretchPitchCorrection;
 
-                    const offlinePitchShift = new Tone.PitchShift({ pitch: totalPitchShift });
+                    // High-quality offline processing with same settings as real-time
+                    const offlinePitchShift = new Tone.PitchShift({ 
+                        pitch: totalPitchShift,
+                        windowSize: 0.1,
+                        delayTime: 0,
+                        feedback: 0
+                    });
                     const offlineEQ = new Tone.EQ3({
                         low: parseFloat(lowEqKnob.value),
                         mid: parseFloat(midEqKnob.value),
@@ -745,12 +762,62 @@ document.addEventListener('DOMContentLoaded', () => {
                         lowFrequency: 400,
                         highFrequency: 2500
                     });
-                    // Use less aggressive limiter threshold to prevent distortion
-                    const offlineLimiter = new Tone.Limiter(-0.1);
+                    // Professional limiter with better headroom
+                    const offlineLimiter = new Tone.Limiter(-0.5);
 
+                    // Create offline effects with current settings
+                    const offlineReverb = new Tone.Reverb({
+                        decay: reverb ? reverb.decay : 1.5,
+                        preDelay: 0.01
+                    }).connect(offline.destination);
+                    const offlineReverbWet = new Tone.Gain(reverbWet ? reverbWet.gain.value : 0);
+
+                    const offlineDelay = new Tone.FeedbackDelay({
+                        delayTime: delay ? delay.delayTime.value : 0.25,
+                        feedback: delay ? delay.feedback.value : 0.3,
+                        maxDelay: 1
+                    }).connect(offline.destination);
+                    const offlineDelayWet = new Tone.Gain(delayWet ? delayWet.gain.value : 0);
+
+                    const offlinePhaser = new Tone.Phaser({
+                        frequency: phaser ? phaser.frequency.value : 0.5,
+                        octaves: phaser ? phaser.octaves : 3,
+                        baseFrequency: 350
+                    }).connect(offline.destination);
+                    const offlinePhaserWet = new Tone.Gain(phaserWet ? phaserWet.gain.value : 0);
+
+                    const offlineChorus = new Tone.Chorus({
+                        frequency: chorus ? chorus.frequency.value : 1.5,
+                        delayTime: 3.5,
+                        depth: chorus ? chorus.depth : 0.7,
+                        spread: 180
+                    }).connect(offline.destination);
+                    offlineChorus.start();
+                    const offlineChorusWet = new Tone.Gain(chorusWet ? chorusWet.gain.value : 0);
+
+                    const offlineStereoWidener = new Tone.StereoWidener(
+                        stereoWidener ? stereoWidener.width.value : 0
+                    ).connect(offline.destination);
+
+                    // Build audio chain
                     offlinePitchShift.connect(offlineEQ);
                     offlineEQ.connect(offlineLimiter);
                     offlineLimiter.connect(offline.destination);
+
+                    // Connect effects in parallel
+                    offlineLimiter.connect(offlineReverbWet);
+                    offlineReverbWet.connect(offlineReverb);
+
+                    offlineLimiter.connect(offlineDelayWet);
+                    offlineDelayWet.connect(offlineDelay);
+
+                    offlineLimiter.connect(offlinePhaserWet);
+                    offlinePhaserWet.connect(offlinePhaser);
+
+                    offlineLimiter.connect(offlineChorusWet);
+                    offlineChorusWet.connect(offlineChorus);
+
+                    offlineLimiter.connect(offlineStereoWidener);
 
                     const offlineWetGain = new Tone.Gain(parseFloat(wetDryMixSlider.value)).connect(offlinePitchShift);
                     const offlineDryGain = new Tone.Gain(1 - parseFloat(wetDryMixSlider.value)).connect(offline.destination);
