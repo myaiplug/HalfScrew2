@@ -366,24 +366,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     chopRateControl.addEventListener('input', (e) => {
         const value = parseInt(e.target.value);
-        // Map slider values to musical note divisions - simplified for clarity
-        const rateMap = {
-            4: { rate: 4, label: '1/4' },      // Quarter notes
-            5: { rate: 6, label: '1/8T' },     // Eighth note triplets
-            6: { rate: 8, label: '1/8' },      // Eighth notes
-            7: { rate: 8, label: '1/8' },      // Eighth notes
-            8: { rate: 8, label: '1/8' },      // Eighth notes (default)
-            9: { rate: 12, label: '1/16T' },   // Sixteenth note triplets
-            10: { rate: 12, label: '1/16T' },  // Sixteenth note triplets
-            11: { rate: 12, label: '1/16T' },  // Sixteenth note triplets
-            12: { rate: 16, label: '1/16' },   // Sixteenth notes
-            13: { rate: 16, label: '1/16' },   // Sixteenth notes
-            14: { rate: 16, label: '1/16' },   // Sixteenth notes
-            15: { rate: 16, label: '1/16' },   // Sixteenth notes
-            16: { rate: 16, label: '1/16' }    // Sixteenth notes
-        };
+        // Map slider values to musical note divisions - now using a function for distinct mappings
+        function getRateMapping(val) {
+            switch (val) {
+                case 4:  return { rate: 4, label: '1/4' };      // Quarter notes
+                case 5:  return { rate: 6, label: '1/8T' };     // Eighth note triplets
+                case 6:  return { rate: 8, label: '1/8' };      // Eighth notes
+                case 9:  return { rate: 12, label: '1/16T' };   // Sixteenth note triplets
+                case 12: return { rate: 16, label: '1/16' };    // Sixteenth notes
+                default: return { rate: 8, label: '1/8' };      // Default to eighth notes
+            }
+        }
         
-        const mapping = rateMap[value] || { rate: 8, label: '1/8' };
+        const mapping = getRateMapping(value);
         chopRate = mapping.rate;
         chopRateValue.textContent = mapping.label;
         
