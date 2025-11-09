@@ -87,11 +87,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const stereoWidth = document.getElementById('stereo-width');
     const stereoWidthValue = document.getElementById('stereo-width-value');
     
+    // DJ Chop effect controls (may not exist in HTML)
+    const chopCrossfader = document.getElementById('chop-crossfader');
+    const crossfaderValue = document.getElementById('crossfader-value');
+    const chopRateControl = document.getElementById('chop-rate');
+    const chopRateValue = document.getElementById('chop-rate-value');
+    const turntable = document.getElementById('turntable');
+    const turntableArm = document.getElementById('turntable-arm');
+    const turntableStatus = document.getElementById('turntable-status');
+    
     // State
     let isPlaying = false;
     let isRepeatOn = false;
     let isEqBypassed = false;
     let isSidePanelOpen = false;
+    
+    // DJ Chop effect state
+    let chopIntensity = 0;
+    let chopRate = 8;
+    let chopInterval = null;
+    let chopPhase = 0;
+    let turntableRotation = 0;
     
     // Visualizer state
     let lowEnergy = 0;
@@ -214,6 +230,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Professional limiter with gentle threshold to preserve dynamics
         limiter = new Tone.Limiter(-0.5); // More headroom for better quality
+        
+        // Initialize chop gain for DJ chop effect
+        chopGain = new Tone.Gain(1);
         
         // Enhanced audio chain with effects
         pitchShift.connect(lowShelf);
@@ -436,27 +455,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Chop Effect Controls
-    chopCrossfader.addEventListener('input', (e) => {
-        chopIntensity = parseFloat(e.target.value);
-        crossfaderValue.textContent = Math.round(chopIntensity) + '%';
-        
-        // Update turntable visual state
-        updateTurntableStatus();
-        
-        // Start or stop chop effect
-        if (chopIntensity > 0 && isPlaying) {
-            startChopEffect();
-        } else {
-            stopChopEffect();
-        }
-    });
+    // Chop Effect Controls (only if elements exist)
+    if (chopCrossfader && crossfaderValue) {
+        chopCrossfader.addEventListener('input', (e) => {
+            chopIntensity = parseFloat(e.target.value);
+            crossfaderValue.textContent = Math.round(chopIntensity) + '%';
+            
+            // Update turntable visual state
+            updateTurntableStatus();
+            
+            // Start or stop chop effect
+            if (chopIntensity > 0 && isPlaying) {
+                startChopEffect();
+            } else {
+                stopChopEffect();
+            }
+        });
+    }
 
-    chopRateControl.addEventListener('input', (e) => {
-        const value = parseInt(e.target.value);
-        // Map slider values to musical note divisions - now using a function for distinct mappings
-        function getRateMapping(val) {
-            switch (val) {
+    if (chopRateControl && chopRateValue) {
+        chopRateControl.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value);
+            // Map slider values to musical note divisions - now using a function for distinct mappings
+            function getRateMapping(val) {
+                switch (val) {
                 case 4:  return { rate: 4, label: '1/4' };      // Quarter notes
                 case 5:  return { rate: 6, label: '1/8T' };     // Eighth note triplets
                 case 6:  return { rate: 8, label: '1/8' };      // Eighth notes
@@ -474,7 +496,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (chopInterval && isPlaying) {
             startChopEffect();
         }
-    });
+        });
+    }
 
     function updateTurntableStatus() {
         if (!turntableStatus) return;
