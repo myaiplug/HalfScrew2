@@ -14,8 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const speedValue = document.getElementById('speed-value');
     const pitchKnob = document.getElementById('pitch-knob');
     const pitchValue = document.getElementById('pitch-value');
+    const wetdryKnob = document.getElementById('wetdry-knob');
+    const wetdryValue = document.getElementById('wetdry-value');
     const speedIndicator = speedKnob?.parentElement.querySelector('.knob-indicator');
     const pitchIndicator = pitchKnob?.parentElement.querySelector('.knob-indicator');
+    const wetdryIndicator = wetdryKnob?.parentElement.querySelector('.knob-indicator');
     
     // Logo elements
     const cornerLogo = document.getElementById('corner-logo');
@@ -745,7 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Add dragging class for cursor feedback
-    [speedKnob, pitchKnob].forEach(knob => {
+    [speedKnob, pitchKnob, wetdryKnob].forEach(knob => {
         if (!knob) return;
         const wrapper = knob.parentElement;
         if (!wrapper) return;
@@ -770,6 +773,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize knob indicators
     updateKnobIndicator(speedKnob, speedIndicator);
     updateKnobIndicator(pitchKnob, pitchIndicator);
+    updateKnobIndicator(wetdryKnob, wetdryIndicator);
+
+    // Wet/Dry Knob
+    safeAddListener(wetdryKnob, 'input', () => {
+        const value = parseFloat(wetdryKnob.value) / 100; // Convert 0-100 to 0-1
+        if (wetdryValue) wetdryValue.textContent = Math.round(value * 100) + '%';
+        updateKnobIndicator(wetdryKnob, wetdryIndicator);
+        
+        // Update the audio wet/dry mix
+        if (wetDry && dryGain && typeof Tone !== 'undefined' && Tone.context && Tone.context.state === 'running') {
+            const smoothingTime = 0.05;
+            wetDry.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
+            dryGain.gain.linearRampToValueAtTime(1 - value, Tone.context.currentTime + smoothingTime);
+        }
+        
+        // Also update the legacy slider if it exists
+        if (wetDryMixSlider) {
+            wetDryMixSlider.value = value;
+        }
+    });
 
     // Wet/Dry Mix
     safeAddListener(wetDryMixSlider, 'input', (e) => {

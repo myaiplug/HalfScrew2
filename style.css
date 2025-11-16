@@ -743,6 +743,79 @@ body {
     font-variant-numeric: tabular-nums;
 }
 
+/* Center control group (wet/dry) - smaller knob */
+.control-group-center {
+    flex: 0.6;
+}
+
+.knob-container-small {
+    width: 180px;
+    height: 180px;
+}
+
+.knob-container-small .knob-wrapper {
+    width: 120px;
+    height: 120px;
+    box-shadow: 
+        8px 8px 16px var(--knob-shadow-1),
+        -8px -8px 16px var(--knob-shadow-2),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+.knob-container-small .knob-wrapper:hover {
+    box-shadow: 
+        0 0 0 3px var(--accent-color),
+        8px 8px 16px var(--knob-shadow-1),
+        -8px -8px 16px var(--knob-shadow-2),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+.knob-container-small .knob-wrapper:active,
+.knob-container-small .knob-wrapper.dragging {
+    box-shadow: 
+        inset 4px 4px 8px var(--knob-shadow-1),
+        inset -4px -4px 8px var(--knob-shadow-2);
+}
+
+.knob-container-small .knob-wrapper::before {
+    width: 90px;
+    height: 90px;
+}
+
+.knob-container-small .knob-indicator {
+    height: 45px;
+    width: 4px;
+    top: 15px;
+    transform-origin: center calc(100% + 15px);
+}
+
+.knob-markers-small .marker {
+    font-size: 11px;
+}
+
+.knob-markers-small .marker-min {
+    top: 20%;
+    left: 8%;
+}
+
+.knob-markers-small .marker-mid {
+    top: 8%;
+    left: 50%;
+}
+
+.knob-markers-small .marker-max {
+    top: 20%;
+    right: 8%;
+}
+
+.control-group-center .label-name {
+    font-size: 13px;
+}
+
+.control-group-center .label-value {
+    font-size: 22px;
+}
+
 /* Center logo */
 .center-logo {
     flex-shrink: 0;

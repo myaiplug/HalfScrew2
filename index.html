@@ -116,9 +116,23 @@
                 </div>
             </div>
 
-            <!-- Center interface logo -->
-            <div class="center-logo" id="center-logo">
-                <img src="" alt="HalfScrew" id="center-logo-img" style="width: 140px; height: 93px; object-fit: contain;">
+            <!-- Wet/Dry Mix Control (Center) -->
+            <div class="control-group control-group-center">
+                <div class="knob-container knob-container-small">
+                    <div class="knob-markers knob-markers-small">
+                        <span class="marker marker-min">0%</span>
+                        <span class="marker marker-mid">50%</span>
+                        <span class="marker marker-max">100%</span>
+                    </div>
+                    <div class="knob-wrapper">
+                        <input type="range" id="wetdry-knob" min="0" max="100" value="100" class="input-knob input-knob-small" data-diameter="100">
+                        <div class="knob-indicator"></div>
+                    </div>
+                </div>
+                <div class="control-label">
+                    <div class="label-name">WET/DRY</div>
+                    <div class="label-value" id="wetdry-value">100%</div>
+                </div>
             </div>
 
             <!-- Pitch Control -->
