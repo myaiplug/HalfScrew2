@@ -76,8 +76,29 @@ body {
 
 /* Top right menu */
 .top-right-menu {
-/* EQ button */
-.eq-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+}
+
+/* Dropdown menu */
+.dropdown-menu {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    background: var(--panel-bg);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px var(--panel-shadow), 0 4px 10px rgba(0, 0, 0, 0.1);
+    min-width: 200px;
+    overflow: hidden;
+    animation: fadeScaleIn 0.2s ease;
+    display: none; /* Hidden by default */
+}
+
+.dropdown-menu.open {
+    display: block; /* Show when open class is added */
+}
     position: fixed;
     top: 20px;
     left: 80px;
@@ -808,12 +829,16 @@ body {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
+    display: none; /* Hidden by default */
     align-items: center;
     justify-content: center;
     z-index: 1000;
     backdrop-filter: blur(4px);
     animation: fadeIn 0.3s ease;
+}
+
+.modal-overlay.visible {
+    display: flex; /* Show as flex when visible class is added */
 }
 
 @media (prefers-reduced-motion: reduce) {
