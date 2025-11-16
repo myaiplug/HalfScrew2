@@ -260,6 +260,78 @@
                     <span class="effect-value" id="stereo-width-value">50%</span>
                 </div>
             </div>
+
+            <!-- Lo-Fi Effects Section -->
+            <div class="effect-section-header">LO-FI EFFECTS</div>
+
+            <!-- Bit Crusher Control -->
+            <div class="effect-control">
+                <label class="effect-label">BIT CRUSHER</label>
+                <div class="effect-slider-container">
+                    <input type="range" id="bitcrusher-mix" class="effect-slider" min="0" max="100" value="0" step="1">
+                    <span class="effect-value" id="bitcrusher-value">0%</span>
+                </div>
+                <div class="effect-params">
+                    <div class="param-group">
+                        <label>Bit Depth</label>
+                        <input type="range" id="bitcrusher-bits" class="param-slider" min="1" max="16" value="8" step="1">
+                        <span id="bitcrusher-bits-value">8</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vinyl/Crackle Control -->
+            <div class="effect-control">
+                <label class="effect-label">VINYL CRACKLE</label>
+                <div class="effect-slider-container">
+                    <input type="range" id="vinyl-mix" class="effect-slider" min="0" max="100" value="0" step="1">
+                    <span class="effect-value" id="vinyl-value">0%</span>
+                </div>
+                <div class="effect-params">
+                    <div class="param-group">
+                        <label>Warmth</label>
+                        <input type="range" id="vinyl-warmth" class="param-slider" min="0" max="100" value="50" step="1">
+                        <span id="vinyl-warmth-value">50</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chopped & Screwed Section -->
+            <div class="effect-section-header">CHOPPED & SCREWED</div>
+
+            <!-- Chop/Stutter Control -->
+            <div class="effect-control">
+                <label class="effect-label">CHOP STUTTER</label>
+                <div class="effect-slider-container">
+                    <input type="range" id="chop-mix" class="effect-slider" min="0" max="100" value="0" step="1">
+                    <span class="effect-value" id="chop-value">0%</span>
+                </div>
+                <div class="effect-params">
+                    <div class="param-group">
+                        <label>Rate</label>
+                        <input type="range" id="chop-rate" class="param-slider" min="1" max="16" value="8" step="1">
+                        <span id="chop-rate-value">8</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preset Buttons -->
+            <div class="preset-buttons">
+                <button class="preset-btn" id="preset-lofi" data-preset="lofi">
+                    <i class="fas fa-cassette-tape"></i> Lo-Fi
+                </button>
+                <button class="preset-btn" id="preset-screwed" data-preset="screwed">
+                    <i class="fas fa-clock"></i> Screwed
+                </button>
+                <button class="preset-btn" id="preset-chopped" data-preset="chopped">
+                    <i class="fas fa-cut"></i> Chopped
+                </button>
+                <button class="preset-btn" id="preset-reset" data-preset="reset">
+                    <i class="fas fa-undo"></i> Reset
+                </button>
+            </div>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -589,6 +589,65 @@ body {
     text-align: right;
 }
 
+/* Effect Section Header */
+.effect-section-header {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent-color);
+    margin: 30px 0 15px;
+    padding: 10px 0;
+    border-bottom: 2px solid var(--accent-color);
+    text-align: center;
+}
+
+/* Preset Buttons */
+.preset-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px solid var(--bg-color);
+}
+
+.preset-btn {
+    background: var(--bg-color);
+    border: 2px solid var(--accent-color);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: var(--text-color);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.preset-btn:hover {
+    background: var(--accent-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--panel-shadow);
+}
+
+.preset-btn:active {
+    transform: translateY(0);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.preset-btn.active {
+    background: var(--accent-color);
+    color: white;
+}
+
+.preset-btn i {
+    font-size: 14px;
+}
+
 /* Control group */
 .control-group {
     display: flex;

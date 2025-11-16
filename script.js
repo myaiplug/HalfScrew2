@@ -117,11 +117,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const stereoWidth = document.getElementById('stereo-width');
     const stereoWidthValue = document.getElementById('stereo-width-value');
     
-    // DJ Chop effect controls (may not exist in HTML)
+    // Lo-Fi effect controls
+    const bitcrusherMix = document.getElementById('bitcrusher-mix');
+    const bitcrusherValue = document.getElementById('bitcrusher-value');
+    const bitcrusherBits = document.getElementById('bitcrusher-bits');
+    const bitcrusherBitsValue = document.getElementById('bitcrusher-bits-value');
+    
+    const vinylMix = document.getElementById('vinyl-mix');
+    const vinylValue = document.getElementById('vinyl-value');
+    const vinylWarmth = document.getElementById('vinyl-warmth');
+    const vinylWarmthValue = document.getElementById('vinyl-warmth-value');
+    
+    const chopMix = document.getElementById('chop-mix');
+    const chopValue = document.getElementById('chop-value');
+    const chopRate = document.getElementById('chop-rate');
+    const chopRateValue = document.getElementById('chop-rate-value');
+    
+    // Preset buttons
+    const presetLofi = document.getElementById('preset-lofi');
+    const presetScrewed = document.getElementById('preset-screwed');
+    const presetChopped = document.getElementById('preset-chopped');
+    const presetReset = document.getElementById('preset-reset');
+    
+    // DJ Chop effect controls (legacy - may not exist in HTML)
     const chopCrossfader = document.getElementById('chop-crossfader');
     const crossfaderValue = document.getElementById('crossfader-value');
-    const chopRateControl = document.getElementById('chop-rate');
-    const chopRateValue = document.getElementById('chop-rate-value');
+    const chopRateControlLegacy = document.getElementById('chop-rate-legacy');
     const turntable = document.getElementById('turntable');
     const turntableArm = document.getElementById('turntable-arm');
     const turntableStatus = document.getElementById('turntable-status');
@@ -132,9 +153,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let isEqBypassed = false;
     let isSidePanelOpen = false;
     
-    // DJ Chop effect state
+    // DJ Chop effect state (legacy)
     let chopIntensity = 0;
-    let chopRate = 8;
+    let chopRateState = 8;
     let chopInterval = null;
     let chopPhase = 0;
     let turntableRotation = 0;
@@ -185,6 +206,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let lowShelf;
     let limiter;
     let eqBypassed = false;
+    
+    // Lo-Fi effect nodes
+    let bitcrusher;
+    let bitcrusherWet;
+    let vinylNoise;
+    let vinylNoiseGain;
+    let vinylFilter;
+    let chopGainNode;
+    let chopLFO;
     
     // Knob smoothing parameters (easily tunable)
     const KNOB_SMOOTHING_CONFIG = {
@@ -396,6 +426,37 @@ document.addEventListener('DOMContentLoaded', () => {
         
         limiter.connect(chorusWet);
         chorusWet.connect(chorus);
+        
+        // Initialize Lo-Fi effects
+        // Bit crusher
+        bitcrusher = new Tone.BitCrusher(8).toDestination();
+        bitcrusherWet = new Tone.Gain(0);
+        limiter.connect(bitcrusherWet);
+        bitcrusherWet.connect(bitcrusher);
+        
+        // Vinyl/crackle effect using noise and filter
+        vinylNoise = new Tone.Noise('brown');
+        vinylNoiseGain = new Tone.Gain(0).toDestination();
+        vinylFilter = new Tone.Filter({
+            frequency: 1000,
+            type: 'lowpass',
+            rolloff: -12
+        });
+        vinylNoise.connect(vinylFilter);
+        vinylFilter.connect(vinylNoiseGain);
+        
+        // Chop LFO for rhythmic gating
+        chopLFO = new Tone.LFO({
+            frequency: 8,
+            min: 0,
+            max: 1,
+            type: 'square'
+        });
+        chopGainNode = new Tone.Gain(1);
+        limiter.disconnect();
+        limiter.connect(chopGainNode);
+        chopGainNode.toDestination();
+        chopLFO.connect(chopGainNode.gain);
         
         limiter.connect(stereoWidener);
         
@@ -883,7 +944,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const mapping = getRateMapping(value);
-        chopRate = mapping.rate;
+        chopRateState = mapping.rate;
         chopRateValue.textContent = mapping.label;
         
         // Restart chop effect with new rate if active
@@ -920,7 +981,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Assuming 120 BPM base tempo, adjust as needed
         const bpm = 120;
         const beatDuration = 60 / bpm; // seconds per beat
-        const chopDuration = (beatDuration * 4) / chopRate; // Duration for each chop cycle
+        const chopDuration = (beatDuration * 4) / chopRateState; // Duration for each chop cycle
         
         chopInterval = setInterval(() => {
             if (!chopGain || !isPlaying) {
@@ -1782,6 +1843,179 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (stereoWidener) {
                 stereoWidener.width.value = width;
             }
+        });
+    }
+
+    // Lo-Fi Effect Controls - Bit Crusher
+    if (bitcrusherMix && bitcrusherWet) {
+        bitcrusherMix.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value) / 100;
+            bitcrusherValue.textContent = Math.round(value * 100) + '%';
+            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+                bitcrusherWet.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
+            } else if (bitcrusherWet) {
+                bitcrusherWet.gain.value = value;
+            }
+        });
+    }
+
+    if (bitcrusherBits && bitcrusher) {
+        bitcrusherBits.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value);
+            bitcrusherBitsValue.textContent = value;
+            if (bitcrusher) {
+                bitcrusher.bits = value;
+            }
+        });
+    }
+
+    // Lo-Fi Effect Controls - Vinyl Crackle
+    if (vinylMix && vinylNoiseGain) {
+        vinylMix.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value) / 100;
+            vinylValue.textContent = Math.round(value * 100) + '%';
+            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+                vinylNoiseGain.gain.linearRampToValueAtTime(value * 0.1, Tone.context.currentTime + smoothingTime);
+            } else if (vinylNoiseGain) {
+                vinylNoiseGain.gain.value = value * 0.1;
+            }
+            
+            // Start/stop vinyl noise based on mix level
+            if (value > 0 && vinylNoise && vinylNoise.state !== 'started') {
+                vinylNoise.start();
+            } else if (value === 0 && vinylNoise && vinylNoise.state === 'started') {
+                vinylNoise.stop();
+            }
+        });
+    }
+
+    if (vinylWarmth && vinylFilter) {
+        vinylWarmth.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            vinylWarmthValue.textContent = value;
+            if (vinylFilter) {
+                // Map warmth to filter frequency (500Hz - 2000Hz)
+                const frequency = 500 + (value / 100) * 1500;
+                vinylFilter.frequency.value = frequency;
+            }
+        });
+    }
+
+    // Chopped & Screwed Effect Controls - Chop/Stutter
+    if (chopMix && chopLFO) {
+        chopMix.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value) / 100;
+            chopValue.textContent = Math.round(value * 100) + '%';
+            
+            if (value > 0 && chopLFO && chopLFO.state !== 'started') {
+                chopLFO.start();
+            } else if (value === 0 && chopLFO && chopLFO.state === 'started') {
+                chopLFO.stop();
+            }
+            
+            // Adjust LFO depth based on mix
+            if (chopLFO) {
+                chopLFO.max = 1;
+                chopLFO.min = 1 - value;
+            }
+        });
+    }
+
+    if (chopRate && chopLFO) {
+        chopRate.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value);
+            chopRateValue.textContent = value;
+            if (chopLFO) {
+                chopLFO.frequency.value = value;
+            }
+        });
+    }
+
+    // Preset Buttons
+    if (presetLofi) {
+        presetLofi.addEventListener('click', () => {
+            // Lo-Fi preset
+            if (speedKnob) speedKnob.value = 85;
+            if (pitchKnob) pitchKnob.value = -2;
+            if (bitcrusherMix) bitcrusherMix.value = 30;
+            if (bitcrusherBits) bitcrusherBits.value = 6;
+            if (vinylMix) vinylMix.value = 20;
+            if (lowEqKnob) lowEqKnob.value = 3;
+            if (highEqKnob) highEqKnob.value = -4;
+            
+            // Trigger input events
+            speedKnob?.dispatchEvent(new Event('input'));
+            pitchKnob?.dispatchEvent(new Event('input'));
+            bitcrusherMix?.dispatchEvent(new Event('input'));
+            bitcrusherBits?.dispatchEvent(new Event('input'));
+            vinylMix?.dispatchEvent(new Event('input'));
+        });
+    }
+
+    if (presetScrewed) {
+        presetScrewed.addEventListener('click', () => {
+            // Chopped & Screwed preset (slow and low)
+            if (speedKnob) speedKnob.value = 65;
+            if (pitchKnob) pitchKnob.value = -5;
+            if (delayMix) delayMix.value = 35;
+            if (reverbMix) reverbMix.value = 25;
+            if (lowEqKnob) lowEqKnob.value = 6;
+            if (highEqKnob) highEqKnob.value = -6;
+            
+            // Trigger input events
+            speedKnob?.dispatchEvent(new Event('input'));
+            pitchKnob?.dispatchEvent(new Event('input'));
+            delayMix?.dispatchEvent(new Event('input'));
+            reverbMix?.dispatchEvent(new Event('input'));
+        });
+    }
+
+    if (presetChopped) {
+        presetChopped.addEventListener('click', () => {
+            // Chopped preset (stuttering effect)
+            if (speedKnob) speedKnob.value = 75;
+            if (pitchKnob) pitchKnob.value = -3;
+            if (chopMix) chopMix.value = 70;
+            if (chopRate) chopRate.value = 8;
+            if (delayMix) delayMix.value = 20;
+            
+            // Trigger input events
+            speedKnob?.dispatchEvent(new Event('input'));
+            pitchKnob?.dispatchEvent(new Event('input'));
+            chopMix?.dispatchEvent(new Event('input'));
+            chopRate?.dispatchEvent(new Event('input'));
+            delayMix?.dispatchEvent(new Event('input'));
+        });
+    }
+
+    if (presetReset) {
+        presetReset.addEventListener('click', () => {
+            // Reset all to defaults
+            if (speedKnob) speedKnob.value = 100;
+            if (pitchKnob) pitchKnob.value = 0;
+            if (wetdryKnob) wetdryKnob.value = 100;
+            if (bitcrusherMix) bitcrusherMix.value = 0;
+            if (vinylMix) vinylMix.value = 0;
+            if (chopMix) chopMix.value = 0;
+            if (reverbMix) reverbMix.value = 0;
+            if (delayMix) delayMix.value = 0;
+            if (phaserMix) phaserMix.value = 0;
+            if (chorusMix) chorusMix.value = 0;
+            if (lowEqKnob) lowEqKnob.value = 0;
+            if (midEqKnob) midEqKnob.value = 0;
+            if (highEqKnob) highEqKnob.value = 0;
+            
+            // Trigger input events
+            speedKnob?.dispatchEvent(new Event('input'));
+            pitchKnob?.dispatchEvent(new Event('input'));
+            wetdryKnob?.dispatchEvent(new Event('input'));
+            bitcrusherMix?.dispatchEvent(new Event('input'));
+            vinylMix?.dispatchEvent(new Event('input'));
+            chopMix?.dispatchEvent(new Event('input'));
+            reverbMix?.dispatchEvent(new Event('input'));
+            delayMix?.dispatchEvent(new Event('input'));
+            phaserMix?.dispatchEvent(new Event('input'));
+            chorusMix?.dispatchEvent(new Event('input'));
         });
     }
 });
