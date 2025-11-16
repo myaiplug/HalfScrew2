@@ -848,6 +848,20 @@ body {
     transform-origin: center calc(100% + 15px);
 }
 
+/* Wet/Dry knob gets theme-specific color */
+#wetdry-indicator {
+    background: var(--accent-color);
+}
+
+/* Additional accent color emphasis for wet/dry in both themes */
+[data-theme="light"] #wetdry-indicator {
+    background: #8b5cf6; /* Purple in light mode */
+}
+
+[data-theme="dark"] #wetdry-indicator {
+    background: #f59e0b; /* Gold in dark mode */
+}
+
 .knob-markers-small .marker {
     font-size: 11px;
 }
@@ -873,6 +887,19 @@ body {
 
 .control-group-center .label-value {
     font-size: 22px;
+}
+
+/* Wet/Dry value gets theme-specific color */
+#wetdry-value {
+    color: var(--accent-color);
+}
+
+[data-theme="light"] #wetdry-value {
+    color: #8b5cf6; /* Purple in light mode */
+}
+
+[data-theme="dark"] #wetdry-value {
+    color: #f59e0b; /* Gold in dark mode */
 }
 
 /* Center logo */
