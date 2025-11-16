@@ -62,7 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const wetDryMixSlider = document.getElementById('wet-dry-mix');
     const wetDryValue = document.getElementById('wet-dry-value');
     const eqEnableCheckbox = document.getElementById('eq-enable');
-    const eqBypassBtn = document.getElementById('eq-bypass');
     const lufsNormalizeCheckbox = document.getElementById('lufs-normalize');
     
     // EQ controls
@@ -310,8 +309,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let chorus;
     let chorusWet;
     let stereoWidener;
-    
-    const smoothingTime = 0.15; // Increased for smoother knob movement and artifact prevention
 
     // Check if Tone.js is available
     if (typeof Tone === 'undefined') {
@@ -1312,124 +1309,124 @@ document.addEventListener('DOMContentLoaded', () => {
             downloadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
         }
 
-            try {
-                const playbackRate = parseFloat(speedKnob.value) / 100;
-                // Adjust rendering duration based on playback rate
-                // Slower playback (rate < 1) produces longer audio, faster playback (rate > 1) produces shorter audio
-                const renderDuration = player.buffer.duration / playbackRate;
-                
-                const buffer = await Tone.Offline(async (offline) => {
-                    const offlinePlayer = new Tone.Player(player.buffer);
-                    offlinePlayer.playbackRate = playbackRate;
+        try {
+            const playbackRate = parseFloat(speedKnob.value) / 100;
+            // Adjust rendering duration based on playback rate
+            // Slower playback (rate < 1) produces longer audio, faster playback (rate > 1) produces shorter audio
+            const renderDuration = player.buffer.duration / playbackRate;
+            
+            const buffer = await Tone.Offline(async (offline) => {
+                const offlinePlayer = new Tone.Player(player.buffer);
+                offlinePlayer.playbackRate = playbackRate;
 
-                    const timeStretchPitchCorrection = -12 * Math.log2(playbackRate);
-                    const userPitchBend = parseFloat(pitchKnob.value);
-                    const totalPitchShift = userPitchBend + timeStretchPitchCorrection;
+                const timeStretchPitchCorrection = -12 * Math.log2(playbackRate);
+                const userPitchBend = parseFloat(pitchKnob.value);
+                const totalPitchShift = userPitchBend + timeStretchPitchCorrection;
 
                     // High-quality offline processing with same settings as real-time
-                    const offlinePitchShift = new Tone.PitchShift({ 
-                        pitch: totalPitchShift,
-                        windowSize: 0.1,
-                        delayTime: 0,
-                        feedback: 0
-                    });
-                    const offlineEQ = new Tone.EQ3({
-                        low: parseFloat(lowEqKnob.value),
-                        mid: parseFloat(midEqKnob.value),
-                        high: parseFloat(highEqKnob.value),
-                        lowFrequency: 400,
-                        highFrequency: 2500
-                    });
+                const offlinePitchShift = new Tone.PitchShift({ 
+                pitch: totalPitchShift,
+                windowSize: 0.1,
+                delayTime: 0,
+                feedback: 0
+                });
+                const offlineEQ = new Tone.EQ3({
+                low: parseFloat(lowEqKnob.value),
+                mid: parseFloat(midEqKnob.value),
+                high: parseFloat(highEqKnob.value),
+                lowFrequency: 400,
+                highFrequency: 2500
+                });
                     // Professional limiter with better headroom
-                    const offlineLimiter = new Tone.Limiter(-0.5);
+                const offlineLimiter = new Tone.Limiter(-0.5);
 
                     // Create offline effects with current settings
-                    const offlineReverb = new Tone.Reverb({
-                        decay: reverb ? reverb.decay : 1.5,
-                        preDelay: 0.01
-                    }).connect(offline.destination);
-                    const offlineReverbWet = new Tone.Gain(reverbWet ? reverbWet.gain.value : 0);
+                const offlineReverb = new Tone.Reverb({
+                decay: reverb ? reverb.decay : 1.5,
+                preDelay: 0.01
+                }).connect(offline.destination);
+                const offlineReverbWet = new Tone.Gain(reverbWet ? reverbWet.gain.value : 0);
 
-                    const offlineDelay = new Tone.FeedbackDelay({
-                        delayTime: delay ? delay.delayTime.value : 0.25,
-                        feedback: delay ? delay.feedback.value : 0.3,
-                        maxDelay: 1
-                    }).connect(offline.destination);
-                    const offlineDelayWet = new Tone.Gain(delayWet ? delayWet.gain.value : 0);
+                const offlineDelay = new Tone.FeedbackDelay({
+                delayTime: delay ? delay.delayTime.value : 0.25,
+                feedback: delay ? delay.feedback.value : 0.3,
+                maxDelay: 1
+                }).connect(offline.destination);
+                const offlineDelayWet = new Tone.Gain(delayWet ? delayWet.gain.value : 0);
 
-                    const offlinePhaser = new Tone.Phaser({
-                        frequency: phaser ? phaser.frequency.value : 0.5,
-                        octaves: phaser ? phaser.octaves : 3,
-                        baseFrequency: 350
-                    }).connect(offline.destination);
-                    const offlinePhaserWet = new Tone.Gain(phaserWet ? phaserWet.gain.value : 0);
+                const offlinePhaser = new Tone.Phaser({
+                frequency: phaser ? phaser.frequency.value : 0.5,
+                octaves: phaser ? phaser.octaves : 3,
+                baseFrequency: 350
+                }).connect(offline.destination);
+                const offlinePhaserWet = new Tone.Gain(phaserWet ? phaserWet.gain.value : 0);
 
-                    const offlineChorus = new Tone.Chorus({
-                        frequency: chorus ? chorus.frequency.value : 1.5,
-                        delayTime: 3.5,
-                        depth: 0.7, // Use default value as Tone.js Chorus depth property is not directly accessible
-                        spread: 180
-                    }).connect(offline.destination);
-                    offlineChorus.start();
-                    const offlineChorusWet = new Tone.Gain(chorusWet ? chorusWet.gain.value : 0);
+                const offlineChorus = new Tone.Chorus({
+                frequency: chorus ? chorus.frequency.value : 1.5,
+                delayTime: 3.5,
+                depth: 0.7, // Use default value as Tone.js Chorus depth property is not directly accessible
+                spread: 180
+                }).connect(offline.destination);
+                offlineChorus.start();
+                const offlineChorusWet = new Tone.Gain(chorusWet ? chorusWet.gain.value : 0);
 
-                    const offlineStereoWidener = new Tone.StereoWidener(
-                        stereoWidener ? stereoWidener.width.value : 0
-                    ).connect(offline.destination);
+                const offlineStereoWidener = new Tone.StereoWidener(
+                stereoWidener ? stereoWidener.width.value : 0
+                ).connect(offline.destination);
 
                     // Build audio chain
-                    offlinePitchShift.connect(offlineEQ);
-                    offlineEQ.connect(offlineLimiter);
-                    offlineLimiter.connect(offline.destination);
+                offlinePitchShift.connect(offlineEQ);
+                offlineEQ.connect(offlineLimiter);
+                offlineLimiter.connect(offline.destination);
 
                     // Connect effects in parallel
-                    offlineLimiter.connect(offlineReverbWet);
-                    offlineReverbWet.connect(offlineReverb);
+                offlineLimiter.connect(offlineReverbWet);
+                offlineReverbWet.connect(offlineReverb);
 
-                    offlineLimiter.connect(offlineDelayWet);
-                    offlineDelayWet.connect(offlineDelay);
+                offlineLimiter.connect(offlineDelayWet);
+                offlineDelayWet.connect(offlineDelay);
 
-                    offlineLimiter.connect(offlinePhaserWet);
-                    offlinePhaserWet.connect(offlinePhaser);
+                offlineLimiter.connect(offlinePhaserWet);
+                offlinePhaserWet.connect(offlinePhaser);
 
-                    offlineLimiter.connect(offlineChorusWet);
-                    offlineChorusWet.connect(offlineChorus);
+                offlineLimiter.connect(offlineChorusWet);
+                offlineChorusWet.connect(offlineChorus);
 
-                    offlineLimiter.connect(offlineStereoWidener);
+                offlineLimiter.connect(offlineStereoWidener);
 
-                    const offlineWetGain = new Tone.Gain(parseFloat(wetDryMixSlider.value)).connect(offlinePitchShift);
-                    const offlineDryGain = new Tone.Gain(1 - parseFloat(wetDryMixSlider.value)).connect(offline.destination);
+                const offlineWetGain = new Tone.Gain(parseFloat(wetDryMixSlider.value)).connect(offlinePitchShift);
+                const offlineDryGain = new Tone.Gain(1 - parseFloat(wetDryMixSlider.value)).connect(offline.destination);
 
-                    offlinePlayer.connect(offlineDryGain);
-                    offlinePlayer.connect(offlineWetGain);
-                    offlinePlayer.start(0);
+                offlinePlayer.connect(offlineDryGain);
+                offlinePlayer.connect(offlineWetGain);
+                offlinePlayer.start(0);
                 }, player.buffer.duration / playbackRate);
 
                 // Use MP3 encoding for better quality and smaller file size
-                const ch0 = buffer.getChannelData(0);
-                const ch1 = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : ch0;
-                const mp3 = bufferToMp3(ch0, ch1, buffer.sampleRate);
-                processedAudioBlob = new Blob([mp3], { type: 'audio/mpeg' });
+            const ch0 = buffer.getChannelData(0);
+            const ch1 = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : ch0;
+            const mp3 = bufferToMp3(ch0, ch1, buffer.sampleRate);
+            processedAudioBlob = new Blob([mp3], { type: 'audio/mpeg' });
                 
                 // Direct download
-                const url = URL.createObjectURL(processedAudioBlob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'halfscrew_processed.mp3';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+            const url = URL.createObjectURL(processedAudioBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'halfscrew_processed.mp3';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
                 
-                showNotification('Download started!', 'success');
+            showNotification('Download started!', 'success');
             } catch (error) {
-                console.error("Error processing audio:", error);
-                showNotification('Error processing audio', 'error');
+            console.error("Error processing audio:", error);
+            showNotification('Error processing audio', 'error');
             } finally {
-                if (downloadButton) {
-                    downloadButton.disabled = false;
-                    downloadButton.innerHTML = '<i class="fas fa-download"></i> Download';
-                }
+            if (downloadButton) {
+            downloadButton.disabled = false;
+            downloadButton.innerHTML = '<i class="fas fa-download"></i> Download';
+            }
             }
         } catch (error) {
             console.error("Error in download handler:", error);
