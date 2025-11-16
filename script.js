@@ -1092,15 +1092,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateAudio() {
         updateAudioSmoothed();
     }
+    }
 
     // Toolbar: Load Button
-    safeAddListener(loadBtn, 'click', () => {
-        if (fileInput) fileInput.click();
+    loadBtn.addEventListener('click', () => {
+        fileInput.click();
     });
 
     // Monitor function for repeat functionality
     function checkTransportEnd() {
-        if (player && player.buffer && player.state === 'started' && typeof Tone !== 'undefined' && Tone.Transport && Tone.Transport.state === 'started') {
+        if (player && player.buffer && player.state === 'started' && Tone.Transport.state === 'started') {
             // Use Tone.Transport.seconds for proper numeric comparison
             if (Tone.Transport.seconds >= player.buffer.duration) {
                 if (isRepeatOn) {
@@ -1108,7 +1109,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     Tone.Transport.stop();
                     isPlaying = false;
-                    if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
                     if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
                 }
             }
@@ -1119,21 +1120,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Toolbar: Play/Pause Button
-    safeAddListener(playPauseBtn, 'click', () => {
+    playPauseBtn.addEventListener('click', () => {
         if (typeof Tone === 'undefined') {
             showNotification('Audio processing library not loaded.', 'error');
             return;
         }
         
         if (player && player.loaded) {
-            if (Tone.context && Tone.context.state !== 'running') {
+            if (Tone.context.state !== 'running') {
                 Tone.context.resume();
             }
             
-            if (Tone.Transport && Tone.Transport.state !== 'started') {
+            if (Tone.Transport.state !== 'started') {
                 Tone.Transport.start();
                 isPlaying = true;
-                if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
                 if (playButton) playButton.innerHTML = '<i class="fas fa-pause"></i> Pause';
                 checkTransportEnd(); // Start monitoring for repeat
                 
@@ -1142,9 +1143,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     startChopEffect();
                 }
             } else {
-                if (Tone.Transport) Tone.Transport.pause();
+                Tone.Transport.pause();
                 isPlaying = false;
-                if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
                 if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
                 
                 // Stop chop effect when pausing
@@ -1154,14 +1155,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Toolbar: Stop Button
-    safeAddListener(stopBtn, 'click', () => {
+    stopBtn.addEventListener('click', () => {
         if (typeof Tone === 'undefined') return;
         
-        if (Tone.Transport && Tone.Transport.state !== 'stopped') {
+        if (Tone.Transport.state !== 'stopped') {
             Tone.Transport.stop();
             Tone.Transport.position = 0;
             isPlaying = false;
-            if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+            playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
             if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
             
             // Stop chop effect
@@ -1170,31 +1171,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Toolbar: Rewind Button
-    safeAddListener(rewindBtn, 'click', () => {
+    rewindBtn.addEventListener('click', () => {
         if (typeof Tone === 'undefined') return;
         
-        if (Tone.Transport) {
-            Tone.Transport.position = 0;
-            showNotification('Rewound to start', 'info');
-        }
+        Tone.Transport.position = 0;
+        showNotification('Rewound to start', 'info');
     });
 
     // Toolbar: Repeat Button
-    safeAddListener(repeatBtn, 'click', () => {
+    repeatBtn.addEventListener('click', () => {
         isRepeatOn = !isRepeatOn;
-        if (repeatBtn) repeatBtn.setAttribute('data-repeat', isRepeatOn ? 'on' : 'off');
+        repeatBtn.setAttribute('data-repeat', isRepeatOn ? 'on' : 'off');
         showNotification(`Repeat ${isRepeatOn ? 'enabled' : 'disabled'}`, 'info');
     });
 
     // Toolbar: Download Button
-    safeAddListener(toolbarDownloadBtn, 'click', () => {
+    toolbarDownloadBtn.addEventListener('click', () => {
         if (downloadButton) {
             downloadButton.click();
         }
     });
 
     // File Input
-    safeAddListener(fileInput, 'change', (e) => {
+    fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
@@ -1222,7 +1221,7 @@ document.addEventListener('DOMContentLoaded', () => {
             player.dispose();
         }
         
-        if (Tone.Transport && Tone.Transport.state !== 'stopped') {
+        if (Tone.Transport.state !== 'stopped') {
             Tone.Transport.stop();
             Tone.Transport.position = 0;
             if (playButton) {
@@ -1232,10 +1231,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         player = new Tone.Player(url, () => {
             // Enable toolbar buttons
-            if (playPauseBtn) playPauseBtn.disabled = false;
-            if (stopBtn) stopBtn.disabled = false;
-            if (rewindBtn) rewindBtn.disabled = false;
-            if (toolbarDownloadBtn) toolbarDownloadBtn.disabled = false;
+            playPauseBtn.disabled = false;
+            stopBtn.disabled = false;
+            rewindBtn.disabled = false;
+            toolbarDownloadBtn.disabled = false;
             
             // Enable legacy buttons
             if (playButton) playButton.disabled = false;
@@ -1266,177 +1265,169 @@ document.addEventListener('DOMContentLoaded', () => {
         player.connect(wetDry);
     });
 
-    // Play Button (legacy)
-    safeAddListener(playButton, 'click', () => {
-        if (typeof Tone === 'undefined') {
-            showNotification('Audio processing library not loaded.', 'error');
-            return;
-        }
-        
-        if (player && player.loaded) {
-            if (Tone.context && Tone.context.state !== 'running') {
-                Tone.context.resume();
+    // Play Button
+    if (playButton) {
+        playButton.addEventListener('click', () => {
+            if (typeof Tone === 'undefined') {
+                showNotification('Audio processing library not loaded.', 'error');
+                return;
             }
             
-            if (Tone.Transport && Tone.Transport.state !== 'started') {
-                Tone.Transport.start();
-                if (playButton) playButton.innerHTML = '<i class="fas fa-pause"></i> Pause';
-                isPlaying = true;
-                
-                // Start chop effect if crossfader is not at 0
-                if (chopIntensity > 0) {
-                    startChopEffect();
+            if (player && player.loaded) {
+                if (Tone.context.state !== 'running') {
+                    Tone.context.resume();
                 }
-            } else {
-                if (Tone.Transport) Tone.Transport.pause();
-                if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
-                isPlaying = false;
                 
-                // Stop chop effect when pausing
-                stopChopEffect();
+                if (Tone.Transport.state !== 'started') {
+                    Tone.Transport.start();
+                    playButton.innerHTML = '<i class="fas fa-pause"></i> Pause';
+                    isPlaying = true;
+                    
+                    // Start chop effect if crossfader is not at 0
+                    if (chopIntensity > 0) {
+                        startChopEffect();
+                    }
+                } else {
+                    Tone.Transport.pause();
+                    playButton.innerHTML = '<i class="fas fa-play"></i> Play';
+                    isPlaying = false;
+                    
+                    // Stop chop effect when pausing
+                    stopChopEffect();
+                }
             }
-        }
-    });
+        });
+    }
 
     // Download Button - Fixed for audio quality issues
     let processedAudioBlob = null;
     
-    safeAddListener(downloadButton, 'click', async () => {
-        if (!player || !player.loaded) return;
+    if (downloadButton) {
+        downloadButton.addEventListener('click', async () => {
+            if (!player || !player.loaded) return;
 
-        if (downloadButton) {
             downloadButton.disabled = true;
             downloadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-        }
 
-        try {
-            const playbackRate = parseFloat(speedKnob.value) / 100;
-            // Adjust rendering duration based on playback rate
-            // Slower playback (rate < 1) produces longer audio, faster playback (rate > 1) produces shorter audio
-            const renderDuration = player.buffer.duration / playbackRate;
-            
-            const buffer = await Tone.Offline(async (offline) => {
-                const offlinePlayer = new Tone.Player(player.buffer);
-                offlinePlayer.playbackRate = playbackRate;
+            try {
+                const playbackRate = parseFloat(speedKnob.value) / 100;
+                // Adjust rendering duration based on playback rate
+                // Slower playback (rate < 1) produces longer audio, faster playback (rate > 1) produces shorter audio
+                const renderDuration = player.buffer.duration / playbackRate;
+                
+                const buffer = await Tone.Offline(async (offline) => {
+                    const offlinePlayer = new Tone.Player(player.buffer);
+                    offlinePlayer.playbackRate = playbackRate;
 
-                const timeStretchPitchCorrection = -12 * Math.log2(playbackRate);
-                const userPitchBend = parseFloat(pitchKnob.value);
-                const totalPitchShift = userPitchBend + timeStretchPitchCorrection;
+                    const timeStretchPitchCorrection = -12 * Math.log2(playbackRate);
+                    const userPitchBend = parseFloat(pitchKnob.value);
+                    const totalPitchShift = userPitchBend + timeStretchPitchCorrection;
 
                     // High-quality offline processing with same settings as real-time
-                const offlinePitchShift = new Tone.PitchShift({ 
-                pitch: totalPitchShift,
-                windowSize: 0.1,
-                delayTime: 0,
-                feedback: 0
-                });
-                const offlineEQ = new Tone.EQ3({
-                low: parseFloat(lowEqKnob.value),
-                mid: parseFloat(midEqKnob.value),
-                high: parseFloat(highEqKnob.value),
-                lowFrequency: 400,
-                highFrequency: 2500
-                });
+                    const offlinePitchShift = new Tone.PitchShift({ 
+                        pitch: totalPitchShift,
+                        windowSize: 0.1,
+                        delayTime: 0,
+                        feedback: 0
+                    });
+                    const offlineEQ = new Tone.EQ3({
+                        low: parseFloat(lowEqKnob.value),
+                        mid: parseFloat(midEqKnob.value),
+                        high: parseFloat(highEqKnob.value),
+                        lowFrequency: 400,
+                        highFrequency: 2500
+                    });
                     // Professional limiter with better headroom
-                const offlineLimiter = new Tone.Limiter(-0.5);
+                    const offlineLimiter = new Tone.Limiter(-0.5);
 
                     // Create offline effects with current settings
-                const offlineReverb = new Tone.Reverb({
-                decay: reverb ? reverb.decay : 1.5,
-                preDelay: 0.01
-                }).connect(offline.destination);
-                const offlineReverbWet = new Tone.Gain(reverbWet ? reverbWet.gain.value : 0);
+                    const offlineReverb = new Tone.Reverb({
+                        decay: reverb ? reverb.decay : 1.5,
+                        preDelay: 0.01
+                    }).connect(offline.destination);
+                    const offlineReverbWet = new Tone.Gain(reverbWet ? reverbWet.gain.value : 0);
 
-                const offlineDelay = new Tone.FeedbackDelay({
-                delayTime: delay ? delay.delayTime.value : 0.25,
-                feedback: delay ? delay.feedback.value : 0.3,
-                maxDelay: 1
-                }).connect(offline.destination);
-                const offlineDelayWet = new Tone.Gain(delayWet ? delayWet.gain.value : 0);
+                    const offlineDelay = new Tone.FeedbackDelay({
+                        delayTime: delay ? delay.delayTime.value : 0.25,
+                        feedback: delay ? delay.feedback.value : 0.3,
+                        maxDelay: 1
+                    }).connect(offline.destination);
+                    const offlineDelayWet = new Tone.Gain(delayWet ? delayWet.gain.value : 0);
 
-                const offlinePhaser = new Tone.Phaser({
-                frequency: phaser ? phaser.frequency.value : 0.5,
-                octaves: phaser ? phaser.octaves : 3,
-                baseFrequency: 350
-                }).connect(offline.destination);
-                const offlinePhaserWet = new Tone.Gain(phaserWet ? phaserWet.gain.value : 0);
+                    const offlinePhaser = new Tone.Phaser({
+                        frequency: phaser ? phaser.frequency.value : 0.5,
+                        octaves: phaser ? phaser.octaves : 3,
+                        baseFrequency: 350
+                    }).connect(offline.destination);
+                    const offlinePhaserWet = new Tone.Gain(phaserWet ? phaserWet.gain.value : 0);
 
-                const offlineChorus = new Tone.Chorus({
-                frequency: chorus ? chorus.frequency.value : 1.5,
-                delayTime: 3.5,
-                depth: 0.7, // Use default value as Tone.js Chorus depth property is not directly accessible
-                spread: 180
-                }).connect(offline.destination);
-                offlineChorus.start();
-                const offlineChorusWet = new Tone.Gain(chorusWet ? chorusWet.gain.value : 0);
+                    const offlineChorus = new Tone.Chorus({
+                        frequency: chorus ? chorus.frequency.value : 1.5,
+                        delayTime: 3.5,
+                        depth: 0.7, // Use default value as Tone.js Chorus depth property is not directly accessible
+                        spread: 180
+                    }).connect(offline.destination);
+                    offlineChorus.start();
+                    const offlineChorusWet = new Tone.Gain(chorusWet ? chorusWet.gain.value : 0);
 
-                const offlineStereoWidener = new Tone.StereoWidener(
-                stereoWidener ? stereoWidener.width.value : 0
-                ).connect(offline.destination);
+                    const offlineStereoWidener = new Tone.StereoWidener(
+                        stereoWidener ? stereoWidener.width.value : 0
+                    ).connect(offline.destination);
 
                     // Build audio chain
-                offlinePitchShift.connect(offlineEQ);
-                offlineEQ.connect(offlineLimiter);
-                offlineLimiter.connect(offline.destination);
+                    offlinePitchShift.connect(offlineEQ);
+                    offlineEQ.connect(offlineLimiter);
+                    offlineLimiter.connect(offline.destination);
 
                     // Connect effects in parallel
-                offlineLimiter.connect(offlineReverbWet);
-                offlineReverbWet.connect(offlineReverb);
+                    offlineLimiter.connect(offlineReverbWet);
+                    offlineReverbWet.connect(offlineReverb);
 
-                offlineLimiter.connect(offlineDelayWet);
-                offlineDelayWet.connect(offlineDelay);
+                    offlineLimiter.connect(offlineDelayWet);
+                    offlineDelayWet.connect(offlineDelay);
 
-                offlineLimiter.connect(offlinePhaserWet);
-                offlinePhaserWet.connect(offlinePhaser);
+                    offlineLimiter.connect(offlinePhaserWet);
+                    offlinePhaserWet.connect(offlinePhaser);
 
-                offlineLimiter.connect(offlineChorusWet);
-                offlineChorusWet.connect(offlineChorus);
+                    offlineLimiter.connect(offlineChorusWet);
+                    offlineChorusWet.connect(offlineChorus);
 
-                offlineLimiter.connect(offlineStereoWidener);
+                    offlineLimiter.connect(offlineStereoWidener);
 
-                const offlineWetGain = new Tone.Gain(parseFloat(wetDryMixSlider.value)).connect(offlinePitchShift);
-                const offlineDryGain = new Tone.Gain(1 - parseFloat(wetDryMixSlider.value)).connect(offline.destination);
+                    const offlineWetGain = new Tone.Gain(parseFloat(wetDryMixSlider.value)).connect(offlinePitchShift);
+                    const offlineDryGain = new Tone.Gain(1 - parseFloat(wetDryMixSlider.value)).connect(offline.destination);
 
-                offlinePlayer.connect(offlineDryGain);
-                offlinePlayer.connect(offlineWetGain);
-                offlinePlayer.start(0);
+                    offlinePlayer.connect(offlineDryGain);
+                    offlinePlayer.connect(offlineWetGain);
+                    offlinePlayer.start(0);
                 }, player.buffer.duration / playbackRate);
 
                 // Use MP3 encoding for better quality and smaller file size
-            const ch0 = buffer.getChannelData(0);
-            const ch1 = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : ch0;
-            const mp3 = bufferToMp3(ch0, ch1, buffer.sampleRate);
-            processedAudioBlob = new Blob([mp3], { type: 'audio/mpeg' });
+                const ch0 = buffer.getChannelData(0);
+                const ch1 = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : ch0;
+                const mp3 = bufferToMp3(ch0, ch1, buffer.sampleRate);
+                processedAudioBlob = new Blob([mp3], { type: 'audio/mpeg' });
                 
                 // Direct download
-            const url = URL.createObjectURL(processedAudioBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'halfscrew_processed.mp3';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+                const url = URL.createObjectURL(processedAudioBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'halfscrew_processed.mp3';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
                 
-            showNotification('Download started!', 'success');
+                showNotification('Download started!', 'success');
             } catch (error) {
-            console.error("Error processing audio:", error);
-            showNotification('Error processing audio', 'error');
+                console.error("Error processing audio:", error);
+                showNotification('Error processing audio', 'error');
             } finally {
-            if (downloadButton) {
-            downloadButton.disabled = false;
-            downloadButton.innerHTML = '<i class="fas fa-download"></i> Download';
-            }
-            }
-        } catch (error) {
-            console.error("Error in download handler:", error);
-            showNotification('Error processing audio', 'error');
-            if (downloadButton) {
                 downloadButton.disabled = false;
                 downloadButton.innerHTML = '<i class="fas fa-download"></i> Download';
             }
-        }
-    });
+        });
+    }
 
     // Helper Functions
     function validateAudioFile(file) {
@@ -1478,8 +1469,8 @@ document.addEventListener('DOMContentLoaded', () => {
         player.volume.value = 20 * Math.log10(Math.min(gainAdjustment, 2));
     }
 
-    safeAddListener(lufsNormalizeCheckbox, 'change', () => {
-        if (lufsNormalizeCheckbox && lufsNormalizeCheckbox.checked && player && player.loaded) {
+    lufsNormalizeCheckbox.addEventListener('change', () => {
+        if (lufsNormalizeCheckbox.checked && player && player.loaded) {
             applyLUFSNormalization();
         } else if (player) {
             player.volume.value = 0;
@@ -1615,59 +1606,66 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Side Panel Toggle
-    safeAddListener(sidePanelToggle, 'click', () => {
-        isSidePanelOpen = !isSidePanelOpen;
-        toggleClassSafe(sideEffectsPanel, 'open', isSidePanelOpen);
-        toggleClassSafe(sidePanelToggle, 'active', isSidePanelOpen);
-    });
+    if (sidePanelToggle) {
+        sidePanelToggle.addEventListener('click', () => {
+            isSidePanelOpen = !isSidePanelOpen;
+            sideEffectsPanel.classList.toggle('open', isSidePanelOpen);
+            sidePanelToggle.classList.toggle('active', isSidePanelOpen);
+        });
+    }
 
-    safeAddListener(sidePanelClose, 'click', () => {
-        isSidePanelOpen = false;
-        toggleClassSafe(sideEffectsPanel, 'open', false);
-        toggleClassSafe(sidePanelToggle, 'active', false);
-    });
+    if (sidePanelClose) {
+        sidePanelClose.addEventListener('click', () => {
+            isSidePanelOpen = false;
+            sideEffectsPanel.classList.remove('open');
+            sidePanelToggle.classList.remove('active');
+        });
+    }
 
     // Effect Controls - Reverb
-    safeAddListener(reverbMix, 'input', (e) => {
-        const value = parseFloat(e.target.value) / 100;
-        if (reverbValue) reverbValue.textContent = Math.round(value * 100) + '%';
-        if (reverbWet) {
-            if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state === 'running') {
+    if (reverbMix && reverbWet) {
+        reverbMix.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value) / 100;
+            reverbValue.textContent = Math.round(value * 100) + '%';
+            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
                 reverbWet.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
-            } else {
+            } else if (reverbWet) {
                 reverbWet.gain.value = value;
             }
-        }
-    });
+        });
+    }
 
-    safeAddListener(reverbDecay, 'input', (e) => {
-        const value = parseFloat(e.target.value);
-        if (reverbDecayValue) reverbDecayValue.textContent = value.toFixed(1) + 's';
-        if (reverb) {
-            reverb.decay = value;
-        }
-    });
+    if (reverbDecay && reverb) {
+        reverbDecay.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            reverbDecayValue.textContent = value.toFixed(1) + 's';
+            if (reverb) {
+                reverb.decay = value;
+            }
+        });
+    }
 
     // Effect Controls - Delay
-    safeAddListener(delayMix, 'input', (e) => {
-        const value = parseFloat(e.target.value) / 100;
-        if (delayValue) delayValue.textContent = Math.round(value * 100) + '%';
-        if (delayWet) {
-            if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state === 'running') {
+    if (delayMix && delayWet) {
+        delayMix.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value) / 100;
+            delayValue.textContent = Math.round(value * 100) + '%';
+            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
                 delayWet.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
-            } else {
+            } else if (delayWet) {
                 delayWet.gain.value = value;
             }
-        }
-    });
+        });
+    }
 
-    safeAddListener(delayTime, 'input', (e) => {
-        const value = parseFloat(e.target.value);
-        if (delayTimeValue) delayTimeValue.textContent = value.toFixed(2) + 's';
-        if (delay) {
-            delay.delayTime.value = value;
-        }
-    });
+    if (delayTime && delay) {
+        delayTime.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            delayTimeValue.textContent = value.toFixed(2) + 's';
+            if (delay) {
+                delay.delayTime.value = value;
+            }
+        });
     }
 
     if (delayFeedback && delay) {
@@ -1676,87 +1674,91 @@ document.addEventListener('DOMContentLoaded', () => {
             delayFeedbackValue.textContent = value.toFixed(2);
             if (delay) {
                 delay.feedback.value = value;
-    safeAddListener(delayFeedback, 'input', (e) => {
-        const value = parseFloat(e.target.value);
-        if (delayFeedbackValue) delayFeedbackValue.textContent = value.toFixed(2);
-        if (delay) {
-            delay.feedback.value = value;
-        }
-    });
+            }
+        });
+    }
 
     // Effect Controls - Phaser
-    safeAddListener(phaserMix, 'input', (e) => {
-        const value = parseFloat(e.target.value) / 100;
-        if (phaserValue) phaserValue.textContent = Math.round(value * 100) + '%';
-        if (phaserWet) {
-            if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state === 'running') {
+    if (phaserMix && phaserWet) {
+        phaserMix.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value) / 100;
+            phaserValue.textContent = Math.round(value * 100) + '%';
+            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
                 phaserWet.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
-            } else {
+            } else if (phaserWet) {
                 phaserWet.gain.value = value;
             }
-        }
-    });
+        });
+    }
 
-    safeAddListener(phaserFreq, 'input', (e) => {
-        const value = parseFloat(e.target.value);
-        if (phaserFreqValue) phaserFreqValue.textContent = value.toFixed(1) + ' Hz';
-        if (phaser) {
-            phaser.frequency.value = value;
-        }
-    });
+    if (phaserFreq && phaser) {
+        phaserFreq.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            phaserFreqValue.textContent = value.toFixed(1) + ' Hz';
+            if (phaser) {
+                phaser.frequency.value = value;
+            }
+        });
+    }
 
-    safeAddListener(phaserDepth, 'input', (e) => {
+    if (phaserDepth && phaser) {
         const MAX_PHASER_OCTAVES = 5; // Maximum octaves for phaser depth
-        const value = parseFloat(e.target.value);
-        if (phaserDepthValue) phaserDepthValue.textContent = value.toFixed(2);
-        // Phaser depth is controlled by octaves in Tone.js
-        if (phaser) {
-            phaser.octaves = value * MAX_PHASER_OCTAVES; // Scale 0-1 to 0-5 octaves
-        }
-    });
+        phaserDepth.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            phaserDepthValue.textContent = value.toFixed(2);
+            // Phaser depth is controlled by octaves in Tone.js
+            if (phaser) {
+                phaser.octaves = value * MAX_PHASER_OCTAVES; // Scale 0-1 to 0-5 octaves
+            }
+        });
+    }
 
     // Effect Controls - Chorus
-    safeAddListener(chorusMix, 'input', (e) => {
-        const value = parseFloat(e.target.value) / 100;
-        if (chorusValue) chorusValue.textContent = Math.round(value * 100) + '%';
-        if (chorusWet) {
-            if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state === 'running') {
+    if (chorusMix && chorusWet) {
+        chorusMix.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value) / 100;
+            chorusValue.textContent = Math.round(value * 100) + '%';
+            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
                 chorusWet.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
-            } else {
+            } else if (chorusWet) {
                 chorusWet.gain.value = value;
             }
-        }
-    });
+        });
+    }
 
-    safeAddListener(chorusFreq, 'input', (e) => {
-        const value = parseFloat(e.target.value);
-        if (chorusFreqValue) chorusFreqValue.textContent = value.toFixed(1) + ' Hz';
-        if (chorus) {
-            chorus.frequency.value = value;
-        }
-    });
+    if (chorusFreq && chorus) {
+        chorusFreq.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            chorusFreqValue.textContent = value.toFixed(1) + ' Hz';
+            if (chorus) {
+                chorus.frequency.value = value;
+            }
+        });
+    }
 
-    safeAddListener(chorusDepth, 'input', (e) => {
-        const value = parseFloat(e.target.value);
-        if (chorusDepthValue) chorusDepthValue.textContent = value.toFixed(2);
-        if (chorus) {
-            chorus.depth = value;
-        }
-    });
+    if (chorusDepth && chorus) {
+        chorusDepth.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            chorusDepthValue.textContent = value.toFixed(2);
+            if (chorus) {
+                chorus.depth = value;
+            }
+        });
+    }
 
     // Effect Controls - Stereo Width
-    safeAddListener(stereoWidth, 'input', (e) => {
-        const value = parseFloat(e.target.value) / 100;
-        if (stereoWidthValue) stereoWidthValue.textContent = Math.round(value * 100) + '%';
-        // Stereo widener: Map 0-100% slider to -1 to +1 range
-        // 0% = -1 (inverted stereo), 50% = 0 (normal), 100% = +1 (wide)
-        const width = value * 2 - 1;
-        if (stereoWidener) {
-            if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state === 'running') {
+    if (stereoWidth && stereoWidener) {
+        stereoWidth.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value) / 100;
+            stereoWidthValue.textContent = Math.round(value * 100) + '%';
+            // Stereo widener: Map 0-100% slider to -1 to +1 range
+            // 0% = -1 (inverted stereo), 50% = 0 (normal), 100% = +1 (wide)
+            const width = value * 2 - 1;
+            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
                 stereoWidener.width.linearRampToValueAtTime(width, Tone.context.currentTime + smoothingTime);
-            } else {
+            } else if (stereoWidener) {
                 stereoWidener.width.value = width;
             }
-        }
-    });
+        });
+    }
 });
