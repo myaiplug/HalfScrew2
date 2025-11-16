@@ -1,4 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Utility helper functions
+    function safeAddListener(elem, evt, fn, opts) {
+        if (elem) elem.addEventListener(evt, fn, opts);
+    }
+    
+    function toggleClassSafe(elem, cls, enabled) {
+        if (!elem) return;
+        elem.classList.toggle(cls, !!enabled);
+    }
+    
     // DOM Elements - Updated for new HTML structure
     const speedKnob = document.getElementById('speed-knob');
     const speedValue = document.getElementById('speed-value');
@@ -52,7 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const wetDryMixSlider = document.getElementById('wet-dry-mix');
     const wetDryValue = document.getElementById('wet-dry-value');
     const eqEnableCheckbox = document.getElementById('eq-enable');
-    const eqBypassBtn = document.getElementById('eq-bypass');
     const lufsNormalizeCheckbox = document.getElementById('lufs-normalize');
     
     // EQ controls
@@ -181,13 +190,19 @@ document.addEventListener('DOMContentLoaded', () => {
         interpolationTime: 0.1   // Interpolation time for value changes
     };
     
+    // Constants for knob ranges
+    const SPEED_MIN = 50;
+    const SPEED_MAX = 200;
+    const PITCH_MIN = -12;
+    const PITCH_MAX = 12;
+    
     const smoothingTime = KNOB_SMOOTHING_CONFIG.interpolationTime;
     
     // Knob smoothing state
     let speedSmoothing = { lastValue: 100, lastTime: Date.now(), targetValue: 100 };
     let pitchSmoothing = { lastValue: 0, lastTime: Date.now(), targetValue: 0 };
     
-    // Logo paths (easily replaceable)
+    // Logo paths (easily replaceable) - Moved earlier for proper initialization
     const LOGO_PATHS = {
         corner: {
             light: 'lightcl.png',
@@ -199,61 +214,88 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // Initialize logo system
+    /**
+     * Initialize logo system with safe fallback handling
+     * Preserves <img> elements by using onerror handlers to insert SVG fallbacks
+     * without breaking references. Sets alt attributes and async decoding.
+     */
     function updateLogos() {
         const theme = body.getAttribute('data-theme') || 'light';
         const cornerPath = LOGO_PATHS.corner[theme];
         const centerPath = LOGO_PATHS.center[theme];
         
-        // Set corner logo with fallback
+        // Set corner logo with fallback - preserves img element
         if (cornerLogoImg) {
+            cornerLogoImg.setAttribute('alt', 'HalfScrew Logo');
+            cornerLogoImg.setAttribute('decoding', 'async');
             cornerLogoImg.src = cornerPath;
+            // On error, create an SVG fallback element alongside the img
             cornerLogoImg.onerror = () => {
-                // Fallback to SVG icon if PNG not found
-                cornerLogo.innerHTML = `
-                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="4" y="10" width="40" height="28" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/>
-                        <circle cx="14" cy="24" r="5" stroke="currentColor" stroke-width="2" fill="none"/>
-                        <circle cx="34" cy="24" r="5" stroke="currentColor" stroke-width="2" fill="none"/>
-                        <path d="M14 29 Q24 26 34 29" stroke="currentColor" stroke-width="2" fill="none"/>
-                        <circle cx="24" cy="8" r="2" fill="var(--accent-color)"/>
-                    </svg>
-                `;
+                if (cornerLogo && !cornerLogo.querySelector('.logo-fallback')) {
+                    const svgFallback = document.createElement('div');
+                    svgFallback.className = 'logo-fallback';
+                    svgFallback.style.cssText = 'position: absolute; top: 0; left: 0; width: 48px; height: 48px;';
+                    svgFallback.innerHTML = `
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="4" y="10" width="40" height="28" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                            <circle cx="14" cy="24" r="5" stroke="currentColor" stroke-width="2" fill="none"/>
+                            <circle cx="34" cy="24" r="5" stroke="currentColor" stroke-width="2" fill="none"/>
+                            <path d="M14 29 Q24 26 34 29" stroke="currentColor" stroke-width="2" fill="none"/>
+                            <circle cx="24" cy="8" r="2" fill="var(--accent-color)"/>
+                        </svg>
+                    `;
+                    cornerLogoImg.style.display = 'none';
+                    cornerLogo.style.position = 'relative';
+                    cornerLogo.appendChild(svgFallback);
+                }
             };
         }
         
-        // Set center logo with fallback
+        // Set center logo with fallback - preserves img element
         if (centerLogoImg) {
+            centerLogoImg.setAttribute('alt', 'HalfScrew Center Logo');
+            centerLogoImg.setAttribute('decoding', 'async');
             centerLogoImg.src = centerPath;
+            // On error, create an SVG fallback element alongside the img
             centerLogoImg.onerror = () => {
-                // Fallback to SVG cassette if PNG not found
-                centerLogo.innerHTML = `
-                    <svg width="140" height="93" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <linearGradient id="cassetteGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" style="stop-color:var(--cassette-color-1);stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:var(--cassette-color-2);stop-opacity:1" />
-                            </linearGradient>
-                        </defs>
-                        <rect x="10" y="15" width="100" height="50" rx="4" fill="url(#cassetteGrad)" opacity="0.9"/>
-                        <rect x="15" y="20" width="90" height="40" rx="3" fill="var(--bg-color)" opacity="0.2"/>
-                        <circle cx="35" cy="40" r="10" stroke="var(--bg-color)" stroke-width="2" fill="none"/>
-                        <circle cx="85" cy="40" r="10" stroke="var(--bg-color)" stroke-width="2" fill="none"/>
-                        <circle cx="35" cy="40" r="5" fill="var(--bg-color)" opacity="0.4"/>
-                        <circle cx="85" cy="40" r="5" fill="var(--bg-color)" opacity="0.4"/>
-                        <path d="M45 40 Q60 35 75 40" stroke="var(--bg-color)" stroke-width="1.5" fill="none" opacity="0.6"/>
-                        <rect x="50" y="25" width="20" height="8" rx="2" fill="var(--bg-color)" opacity="0.3"/>
-                    </svg>
-                `;
+                if (centerLogo && !centerLogo.querySelector('.logo-fallback')) {
+                    const svgFallback = document.createElement('div');
+                    svgFallback.className = 'logo-fallback';
+                    svgFallback.style.cssText = 'position: absolute; top: 0; left: 0; width: 140px; height: 93px;';
+                    svgFallback.innerHTML = `
+                        <svg width="140" height="93" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="cassetteGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:var(--cassette-color-1);stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:var(--cassette-color-2);stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <rect x="10" y="15" width="100" height="50" rx="4" fill="url(#cassetteGrad)" opacity="0.9"/>
+                            <rect x="15" y="20" width="90" height="40" rx="3" fill="var(--bg-color)" opacity="0.2"/>
+                            <circle cx="35" cy="40" r="10" stroke="var(--bg-color)" stroke-width="2" fill="none"/>
+                            <circle cx="85" cy="40" r="10" stroke="var(--bg-color)" stroke-width="2" fill="none"/>
+                            <circle cx="35" cy="40" r="5" fill="var(--bg-color)" opacity="0.4"/>
+                            <circle cx="85" cy="40" r="5" fill="var(--bg-color)" opacity="0.4"/>
+                            <path d="M45 40 Q60 35 75 40" stroke="var(--bg-color)" stroke-width="1.5" fill="none" opacity="0.6"/>
+                            <rect x="50" y="25" width="20" height="8" rx="2" fill="var(--bg-color)" opacity="0.3"/>
+                        </svg>
+                    `;
+                    centerLogoImg.style.display = 'none';
+                    centerLogo.style.position = 'relative';
+                    centerLogo.appendChild(svgFallback);
+                }
             };
         }
         
         // Set modal logo
         if (modalLogoImg) {
+            modalLogoImg.setAttribute('alt', 'HalfScrew Modal Logo');
+            modalLogoImg.setAttribute('decoding', 'async');
             modalLogoImg.src = centerPath;
         }
     }
     
+    // Initialize logos early, before theme loading
     updateLogos();
     let chopGain; // For chop effect volume control
     
@@ -267,8 +309,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let chorus;
     let chorusWet;
     let stereoWidener;
-    
-    const smoothingTime = 0.15; // Increased for smoother knob movement and artifact prevention
 
     // Check if Tone.js is available
     if (typeof Tone === 'undefined') {
@@ -361,32 +401,44 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Dropdown Menu Toggle
-    settingsBtn.addEventListener('click', (e) => {
+    safeAddListener(settingsBtn, 'click', (e) => {
         e.stopPropagation();
-        dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
+        const isOpen = dropdownMenu && dropdownMenu.classList.contains('open');
+        toggleClassSafe(dropdownMenu, 'open', !isOpen);
+        // Update aria-expanded for accessibility
+        if (settingsBtn) {
+            settingsBtn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+        }
     });
     
     // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
-        if (!settingsBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
-            dropdownMenu.style.display = 'none';
+        if (settingsBtn && dropdownMenu && !settingsBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+            toggleClassSafe(dropdownMenu, 'open', false);
+            if (settingsBtn) {
+                settingsBtn.setAttribute('aria-expanded', 'false');
+            }
         }
     });
     
-    // Theme Toggle from menu
+    // Theme Toggle from menu - Centralized function
     function toggleTheme() {
         const currentTheme = body.getAttribute('data-theme');
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
         body.setAttribute('data-theme', newTheme);
         
-        // Update menu icon
-        const icon = themeToggleMenu.querySelector('i');
-        if (newTheme === 'dark') {
-            icon.classList.remove('fa-moon');
-            icon.classList.add('fa-sun');
-        } else {
-            icon.classList.remove('fa-sun');
-            icon.classList.add('fa-moon');
+        // Update menu icon if element exists
+        if (themeToggleMenu) {
+            const icon = themeToggleMenu.querySelector('i');
+            if (icon) {
+                if (newTheme === 'dark') {
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                } else {
+                    icon.classList.remove('fa-sun');
+                    icon.classList.add('fa-moon');
+                }
+            }
         }
         
         // Save preference and update logos
@@ -394,75 +446,87 @@ document.addEventListener('DOMContentLoaded', () => {
         updateLogos();
     }
     
-    themeToggleMenu.addEventListener('click', () => {
+    safeAddListener(themeToggleMenu, 'click', () => {
         toggleTheme();
-        dropdownMenu.style.display = 'none';
+        toggleClassSafe(dropdownMenu, 'open', false);
+        if (settingsBtn) {
+            settingsBtn.setAttribute('aria-expanded', 'false');
+        }
     });
     
     // Load saved theme
     const savedTheme = localStorage.getItem('theme') || 'light';
     body.setAttribute('data-theme', savedTheme);
-    const themeIcon = themeToggleMenu.querySelector('i');
-    if (savedTheme === 'dark') {
-        themeIcon.classList.remove('fa-moon');
-        themeIcon.classList.add('fa-sun');
+    if (themeToggleMenu) {
+        const themeIcon = themeToggleMenu.querySelector('i');
+        if (themeIcon && savedTheme === 'dark') {
+            themeIcon.classList.remove('fa-moon');
+            themeIcon.classList.add('fa-sun');
+        }
     }
     
     // About Menu
-    aboutMenu.addEventListener('click', () => {
-        aboutModal.style.display = 'flex';
-        dropdownMenu.style.display = 'none';
+    safeAddListener(aboutMenu, 'click', () => {
+        toggleClassSafe(aboutModal, 'visible', true);
+        if (aboutModal) aboutModal.setAttribute('aria-hidden', 'false');
+        toggleClassSafe(dropdownMenu, 'open', false);
+        if (settingsBtn) settingsBtn.setAttribute('aria-expanded', 'false');
     });
     
-    aboutClose.addEventListener('click', () => {
-        aboutModal.style.display = 'none';
+    safeAddListener(aboutClose, 'click', () => {
+        toggleClassSafe(aboutModal, 'visible', false);
+        if (aboutModal) aboutModal.setAttribute('aria-hidden', 'true');
     });
     
-    aboutModal.addEventListener('click', (e) => {
+    safeAddListener(aboutModal, 'click', (e) => {
         if (e.target === aboutModal) {
-            aboutModal.style.display = 'none';
+            toggleClassSafe(aboutModal, 'visible', false);
+            if (aboutModal) aboutModal.setAttribute('aria-hidden', 'true');
         }
     });
     
     // Pre-Order Menu (opens marketing modal)
-    preorderMenu.addEventListener('click', () => {
-        marketingModal.style.display = 'flex';
-        dropdownMenu.style.display = 'none';
+    safeAddListener(preorderMenu, 'click', () => {
+        toggleClassSafe(marketingModal, 'visible', true);
+        if (marketingModal) marketingModal.setAttribute('aria-hidden', 'false');
+        toggleClassSafe(dropdownMenu, 'open', false);
+        if (settingsBtn) settingsBtn.setAttribute('aria-expanded', 'false');
     });
     
     // Center Logo Click - Opens Marketing Modal
-    if (centerLogo) {
-        centerLogo.addEventListener('click', () => {
-            marketingModal.style.display = 'flex';
-        });
-    }
-    
-    // Marketing Modal
-    marketingClose.addEventListener('click', () => {
-        marketingModal.style.display = 'none';
+    safeAddListener(centerLogo, 'click', () => {
+        toggleClassSafe(marketingModal, 'visible', true);
+        if (marketingModal) marketingModal.setAttribute('aria-hidden', 'false');
     });
     
-    marketingModal.addEventListener('click', (e) => {
+    // Marketing Modal
+    safeAddListener(marketingClose, 'click', () => {
+        toggleClassSafe(marketingModal, 'visible', false);
+        if (marketingModal) marketingModal.setAttribute('aria-hidden', 'true');
+    });
+    
+    safeAddListener(marketingModal, 'click', (e) => {
         if (e.target === marketingModal) {
-            marketingModal.style.display = 'none';
+            toggleClassSafe(marketingModal, 'visible', false);
+            if (marketingModal) marketingModal.setAttribute('aria-hidden', 'true');
         }
     });
     
     // Join Beta Button
-    if (joinBetaBtn) {
-        joinBetaBtn.addEventListener('click', () => {
-            showNotification('Beta program coming soon! Stay tuned.', 'info');
-        });
-    }
+    safeAddListener(joinBetaBtn, 'click', () => {
+        showNotification('Beta program coming soon! Stay tuned.', 'info');
+    });
 
     // Settings Modal
-    settingsClose.addEventListener('click', () => {
-        settingsModal.style.display = 'none';
+    safeAddListener(settingsClose, 'click', () => {
+        toggleClassSafe(settingsModal, 'visible', false);
+        if (settingsModal) settingsModal.setAttribute('aria-hidden', 'true');
     });
     
-    settingsModal.addEventListener('click', (e) => {
+    safeAddListener(settingsModal, 'click', (e) => {
         if (e.target === settingsModal) {
-            settingsModal.style.display = 'none';
+            toggleClassSafe(settingsModal, 'visible', false);
+            if (settingsModal) settingsModal.setAttribute('aria-hidden', 'true');
         }
     });
 
@@ -477,8 +541,9 @@ document.addEventListener('DOMContentLoaded', () => {
             eqBypassed = false;
             eqBypassBtn.classList.remove('bypassed');
     // EQ Modal
-    eqBtn.addEventListener('click', () => {
-        eqModal.style.display = 'flex';
+    safeAddListener(eqBtn, 'click', () => {
+        toggleClassSafe(eqModal, 'visible', true);
+        if (eqModal) eqModal.setAttribute('aria-hidden', 'false');
         if (!analyser && player) {
             setupAnalyser();
         }
@@ -487,8 +552,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    eqClose.addEventListener('click', () => {
-        eqModal.style.display = 'none';
+    safeAddListener(eqClose, 'click', () => {
+        toggleClassSafe(eqModal, 'visible', false);
+        if (eqModal) eqModal.setAttribute('aria-hidden', 'true');
         // Clean up clipping timeouts when modal closes
         if (lowClippingTimeout) {
             clearTimeout(lowClippingTimeout);
@@ -507,9 +573,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    eqModal.addEventListener('click', (e) => {
+    safeAddListener(eqModal, 'click', (e) => {
         if (e.target === eqModal) {
-            eqModal.style.display = 'none';
+            toggleClassSafe(eqModal, 'visible', false);
+            if (eqModal) eqModal.setAttribute('aria-hidden', 'true');
             // Clean up clipping timeouts when modal closes
             if (lowClippingTimeout) {
                 clearTimeout(lowClippingTimeout);
@@ -529,50 +596,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // EQ Bypass Button
-    eqBypassBtn.addEventListener('click', () => {
-        isEqBypassed = !isEqBypassed;
-        eqBypassBtn.classList.toggle('active', isEqBypassed);
-        
-        if (lowShelf) {
-            if (isEqBypassed) {
-                // Bypass EQ by setting all bands to 0
-                if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
-                    lowShelf.low.linearRampToValueAtTime(0, Tone.context.currentTime + smoothingTime);
-                    lowShelf.mid.linearRampToValueAtTime(0, Tone.context.currentTime + smoothingTime);
-                    lowShelf.high.linearRampToValueAtTime(0, Tone.context.currentTime + smoothingTime);
-                } else {
-                    lowShelf.low.value = 0;
-                    lowShelf.mid.value = 0;
-                    lowShelf.high.value = 0;
-                }
-            } else {
-                // Restore EQ values
-                updateEQ();
-            }
-        }
-    });
-    
-    // EQ Bypass Button - Immediately toggles EQ processing
-    eqBypassBtn.addEventListener('click', () => {
+    // EQ Bypass Button - Immediately toggles EQ processing with smooth ramping
+    safeAddListener(eqBypassBtn, 'click', () => {
         eqBypassed = !eqBypassed;
         
-        if (eqBypassed) {
-            eqBypassBtn.classList.add('bypassed');
-            eqBypassBtn.innerHTML = '<i class="fas fa-power-off"></i> Bypassed';
+        if (eqBypassBtn) {
+            toggleClassSafe(eqBypassBtn, 'active', eqBypassed);
             
-            // Immediately set EQ to neutral
-            if (lowShelf) {
-                lowShelf.low.value = 0;
-                lowShelf.mid.value = 0;
-                lowShelf.high.value = 0;
+            if (eqBypassed) {
+                // Update button text and icon using textContent
+                const icon = eqBypassBtn.querySelector('i');
+                const textSpan = eqBypassBtn.querySelector('.bypass-text');
+                if (textSpan) textSpan.textContent = 'Bypassed';
+                
+                // Smoothly ramp EQ to neutral when bypassing
+                if (lowShelf) {
+                    if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state === 'running') {
+                        const rampTime = Tone.context.currentTime + smoothingTime;
+                        lowShelf.low.linearRampToValueAtTime(0, rampTime);
+                        lowShelf.mid.linearRampToValueAtTime(0, rampTime);
+                        lowShelf.high.linearRampToValueAtTime(0, rampTime);
+                    } else if (lowShelf) {
+                        lowShelf.low.value = 0;
+                        lowShelf.mid.value = 0;
+                        lowShelf.high.value = 0;
+                    }
+                }
+            } else {
+                // Update button text
+                const textSpan = eqBypassBtn.querySelector('.bypass-text');
+                if (textSpan) textSpan.textContent = 'Bypass';
+                
+                // Restore EQ settings
+                updateEQ();
             }
-        } else {
-            eqBypassBtn.classList.remove('bypassed');
-            eqBypassBtn.innerHTML = '<i class="fas fa-power-off"></i> Bypass';
-            
-            // Restore EQ settings
-            updateEQ();
         }
         
         showNotification(eqBypassed ? 'EQ Bypassed' : 'EQ Active', 'info');
@@ -592,8 +649,9 @@ document.addEventListener('DOMContentLoaded', () => {
         indicator.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
     }
 
-    // Knob smoothing helper function
-    function smoothKnobValue(currentValue, newValue, smoothingState, min, max) {
+    // Knob smoothing helper function with explicit parameters
+    // Returns smoothed value and updates smoothingState
+    function smoothKnobValue(newValue, smoothingState, min, max) {
         const now = Date.now();
         const deltaTime = now - smoothingState.lastTime;
         
@@ -610,8 +668,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const smoothedValue = smoothingState.lastValue + delta;
         
-        // Prevent zero/NaN values
-        const safeValue = isNaN(smoothedValue) ? currentValue : smoothedValue;
+        // Prevent zero/NaN values and clamp to range
+        const safeValue = isNaN(smoothedValue) ? smoothingState.lastValue : smoothedValue;
         const clampedValue = Math.max(min, Math.min(max, safeValue));
         
         smoothingState.lastValue = clampedValue;
@@ -621,47 +679,82 @@ document.addEventListener('DOMContentLoaded', () => {
         return clampedValue;
     }
     
+    // RAF-based continuous smoothing towards target
+    let smoothingAnimationFrame = null;
+    function startKnobSmoothing() {
+        if (smoothingAnimationFrame) return;
+        
+        function animate() {
+            let needsUpdate = false;
+            
+            // Smooth speed towards target
+            if (Math.abs(speedSmoothing.targetValue - speedSmoothing.lastValue) > 0.1) {
+                const lerpFactor = 0.15;
+                speedSmoothing.lastValue += (speedSmoothing.targetValue - speedSmoothing.lastValue) * lerpFactor;
+                needsUpdate = true;
+            }
+            
+            // Smooth pitch towards target
+            if (Math.abs(pitchSmoothing.targetValue - pitchSmoothing.lastValue) > 0.01) {
+                const lerpFactor = 0.15;
+                pitchSmoothing.lastValue += (pitchSmoothing.targetValue - pitchSmoothing.lastValue) * lerpFactor;
+                needsUpdate = true;
+            }
+            
+            if (needsUpdate) {
+                updateAudioSmoothed();
+                smoothingAnimationFrame = requestAnimationFrame(animate);
+            } else {
+                smoothingAnimationFrame = null;
+            }
+        }
+        
+        smoothingAnimationFrame = requestAnimationFrame(animate);
+    }
+    
     // Speed Knob with smoothing
-    speedKnob.addEventListener('input', () => {
+    safeAddListener(speedKnob, 'input', () => {
         const rawValue = parseFloat(speedKnob.value);
         const smoothedValue = smoothKnobValue(
-            speedSmoothing.lastValue,
             rawValue,
             speedSmoothing,
-            50,
-            200
+            SPEED_MIN,
+            SPEED_MAX
         );
         
-        speedValue.textContent = Math.round(smoothedValue) + '%';
+        if (speedValue) speedValue.textContent = Math.round(smoothedValue) + '%';
         updateKnobIndicator(speedKnob, speedIndicator);
         updateAudioSmoothed();
+        startKnobSmoothing();
     });
     
     // Pitch Knob with smoothing
-    pitchKnob.addEventListener('input', () => {
+    safeAddListener(pitchKnob, 'input', () => {
         const rawValue = parseFloat(pitchKnob.value);
         const smoothedValue = smoothKnobValue(
-            pitchSmoothing.lastValue,
             rawValue,
             pitchSmoothing,
-            -12,
-            12
+            PITCH_MIN,
+            PITCH_MAX
         );
         
-        pitchValue.textContent = smoothedValue.toFixed(1) + ' st';
+        if (pitchValue) pitchValue.textContent = smoothedValue.toFixed(1) + ' st';
         updateKnobIndicator(pitchKnob, pitchIndicator);
         updateAudioSmoothed();
+        startKnobSmoothing();
     });
     
     // Add dragging class for cursor feedback
     [speedKnob, pitchKnob].forEach(knob => {
+        if (!knob) return;
         const wrapper = knob.parentElement;
+        if (!wrapper) return;
         
-        knob.addEventListener('mousedown', () => {
+        safeAddListener(knob, 'mousedown', () => {
             wrapper.classList.add('dragging');
         });
         
-        knob.addEventListener('touchstart', () => {
+        safeAddListener(knob, 'touchstart', () => {
             wrapper.classList.add('dragging');
         });
         
@@ -679,11 +772,11 @@ document.addEventListener('DOMContentLoaded', () => {
     updateKnobIndicator(pitchKnob, pitchIndicator);
 
     // Wet/Dry Mix
-    wetDryMixSlider.addEventListener('input', (e) => {
+    safeAddListener(wetDryMixSlider, 'input', (e) => {
         const value = parseFloat(e.target.value);
-        wetDryValue.textContent = Math.round(value * 100) + '%';
+        if (wetDryValue) wetDryValue.textContent = Math.round(value * 100) + '%';
         
-        if (wetDry && dryGain && typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+        if (wetDry && dryGain && typeof Tone !== 'undefined' && Tone.context && Tone.context.state === 'running') {
             wetDry.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
             dryGain.gain.linearRampToValueAtTime(1 - value, Tone.context.currentTime + smoothingTime);
         } else if (wetDry && dryGain) {
@@ -693,29 +786,37 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // EQ Controls
-    lowEqKnob.addEventListener('input', updateEQ);
-    midEqKnob.addEventListener('input', updateEQ);
-    highEqKnob.addEventListener('input', updateEQ);
+    safeAddListener(lowEqKnob, 'input', updateEQ);
+    safeAddListener(midEqKnob, 'input', updateEQ);
+    safeAddListener(highEqKnob, 'input', updateEQ);
 
     function updateEQ() {
+        if (!lowEqKnob || !midEqKnob || !highEqKnob) return;
+        
         const lowGain = parseFloat(lowEqKnob.value);
         const midGain = parseFloat(midEqKnob.value);
         const highGain = parseFloat(highEqKnob.value);
 
-        lowDbValue.textContent = lowGain.toFixed(1) + ' dB';
-        midDbValue.textContent = midGain.toFixed(1) + ' dB';
-        highDbValue.textContent = highGain.toFixed(1) + ' dB';
+        if (lowDbValue) lowDbValue.textContent = lowGain.toFixed(1) + ' dB';
+        if (midDbValue) midDbValue.textContent = midGain.toFixed(1) + ' dB';
+        if (highDbValue) highDbValue.textContent = highGain.toFixed(1) + ' dB';
 
         if (!lowShelf) return;
         
         // Don't update if bypassed
         if (eqBypassed) return;
-        if (!lowShelf || isEqBypassed) return;
 
-        if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
-            lowShelf.low.linearRampToValueAtTime(lowGain, Tone.context.currentTime + smoothingTime);
-            lowShelf.mid.linearRampToValueAtTime(midGain, Tone.context.currentTime + smoothingTime);
-            lowShelf.high.linearRampToValueAtTime(highGain, Tone.context.currentTime + smoothingTime);
+        if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state === 'running') {
+            try {
+                lowShelf.low.linearRampToValueAtTime(lowGain, Tone.context.currentTime + smoothingTime);
+                lowShelf.mid.linearRampToValueAtTime(midGain, Tone.context.currentTime + smoothingTime);
+                lowShelf.high.linearRampToValueAtTime(highGain, Tone.context.currentTime + smoothingTime);
+            } catch (e) {
+                // Fallback if ramping fails
+                lowShelf.low.value = lowGain;
+                lowShelf.mid.value = midGain;
+                lowShelf.high.value = highGain;
+            }
         } else {
             lowShelf.low.value = lowGain;
             lowShelf.mid.value = midGain;
@@ -860,7 +961,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update visualizer with smooth lerp
     function updateVisualizer() {
-        if (!analyser || eqModal.style.display === 'none') {
+        if (!analyser || !eqModal || !eqModal.classList.contains('visible')) {
             animationFrameId = null;
             return;
         }
@@ -946,34 +1047,51 @@ document.addEventListener('DOMContentLoaded', () => {
         animationFrameId = requestAnimationFrame(updateVisualizer);
     }
 
-    // Audio Update Function (keeping existing logic)
-    function updateAudio() {
+    // Audio Update Function with smoothing and safe clamping
+    function updateAudioSmoothed() {
         if (!player || !pitchShift) return;
 
+        // Use smoothingState.lastValue for current smoothed speed
         const playbackRate = speedSmoothing.lastValue / 100;
         
-        // Prevent zero playback rate
+        // Prevent playbackRate <= 0.1 and clamp to reasonable range
         const safePlaybackRate = Math.max(0.1, Math.min(4, playbackRate));
-        player.playbackRate = safePlaybackRate;
+        
+        if (player) {
+            player.playbackRate = safePlaybackRate;
+        }
 
         // Compensate for pitch change from playback rate
         const timeStretchPitchCorrection = -12 * Math.log2(safePlaybackRate);
-        const userPitchBend = pitchSmoothing.lastValue;
-        const targetPitch = userPitchBend + timeStretchPitchCorrection;
         
-        // Prevent NaN values
-        const safePitch = isNaN(targetPitch) ? 0 : targetPitch;
+        // Use smoothingState.lastValue for current smoothed pitch
+        const userPitchBend = pitchSmoothing.lastValue;
+        
+        // Clamp pitch to reasonable range
+        const clampedUserPitch = Math.max(PITCH_MIN, Math.min(PITCH_MAX, userPitchBend));
+        const targetPitch = clampedUserPitch + timeStretchPitchCorrection;
+        
+        // Prevent NaN values with safe fallback
+        const safePitch = isNaN(targetPitch) ? 0 : Math.max(-24, Math.min(24, targetPitch));
 
-        if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
-            pitchShift.pitch.linearRampToValueAtTime(safePitch, Tone.context.currentTime + smoothingTime);
-        } else if (pitchShift) {
-            pitchShift.pitch = safePitch;
+        if (pitchShift) {
+            if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state === 'running') {
+                try {
+                    pitchShift.pitch.linearRampToValueAtTime(safePitch, Tone.context.currentTime + smoothingTime);
+                } catch (e) {
+                    // Fallback if ramping fails
+                    pitchShift.pitch = safePitch;
+                }
+            } else {
+                pitchShift.pitch = safePitch;
+            }
         }
     }
     
-    // Legacy update function for compatibility
+    // Legacy update function for compatibility - delegates to smoothed version
     function updateAudio() {
         updateAudioSmoothed();
+    }
     }
 
     // Toolbar: Load Button
