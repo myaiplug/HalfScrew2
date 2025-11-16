@@ -7,14 +7,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const speedIndicator = speedKnob?.parentElement.querySelector('.knob-indicator');
     const pitchIndicator = pitchKnob?.parentElement.querySelector('.knob-indicator');
     
-    // Theme toggle
-    const themeToggle = document.getElementById('theme-toggle');
-    const body = document.body;
+    // Logo elements
+    const cornerLogo = document.getElementById('corner-logo');
+    const cornerLogoImg = document.getElementById('corner-logo-img');
+    const centerLogo = document.getElementById('center-logo');
+    const centerLogoImg = document.getElementById('center-logo-img');
+    const modalLogoImg = document.getElementById('modal-logo-img');
     
+    // Menu and modals
     // Modals
     const settingsBtn = document.getElementById('settings-btn');
+    const dropdownMenu = document.getElementById('dropdown-menu');
+    const themeToggleMenu = document.getElementById('theme-toggle-menu');
+    const aboutMenu = document.getElementById('about-menu');
+    const preorderMenu = document.getElementById('preorder-menu');
     const settingsModal = document.getElementById('settings-modal');
     const settingsClose = document.getElementById('settings-close');
+    const marketingModal = document.getElementById('marketing-modal');
+    const marketingClose = document.getElementById('marketing-close');
+    const aboutModal = document.getElementById('about-modal');
+    const aboutClose = document.getElementById('about-close');
+    const joinBetaBtn = document.getElementById('join-beta');
+    
+    const body = document.body;
     const eqBtn = document.getElementById('eq-btn');
     const eqModal = document.getElementById('eq-modal');
     const eqClose = document.getElementById('eq-close');
@@ -36,12 +51,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Settings controls
     const wetDryMixSlider = document.getElementById('wet-dry-mix');
     const wetDryValue = document.getElementById('wet-dry-value');
+    const eqEnableCheckbox = document.getElementById('eq-enable');
+    const eqBypassBtn = document.getElementById('eq-bypass');
     const lufsNormalizeCheckbox = document.getElementById('lufs-normalize');
     
     // EQ controls
     const lowEqKnob = document.getElementById('low-eq');
     const midEqKnob = document.getElementById('mid-eq');
     const highEqKnob = document.getElementById('high-eq');
+    const highEqValue = document.getElementById('high-eq-value');
     const lowDbValue = document.getElementById('low-db');
     const midDbValue = document.getElementById('mid-db');
     const highDbValue = document.getElementById('high-db');
@@ -154,6 +172,89 @@ document.addEventListener('DOMContentLoaded', () => {
     let dryGain;
     let lowShelf;
     let limiter;
+    let eqBypassed = false;
+    
+    // Knob smoothing parameters (easily tunable)
+    const KNOB_SMOOTHING_CONFIG = {
+        minRampTime: 0.1,        // Minimum ramp time in seconds
+        maxRatePerMs: 0.5,       // Maximum rate of change per millisecond
+        interpolationTime: 0.1   // Interpolation time for value changes
+    };
+    
+    const smoothingTime = KNOB_SMOOTHING_CONFIG.interpolationTime;
+    
+    // Knob smoothing state
+    let speedSmoothing = { lastValue: 100, lastTime: Date.now(), targetValue: 100 };
+    let pitchSmoothing = { lastValue: 0, lastTime: Date.now(), targetValue: 0 };
+    
+    // Logo paths (easily replaceable)
+    const LOGO_PATHS = {
+        corner: {
+            light: 'lightcl.png',
+            dark: 'darkcl.png'
+        },
+        center: {
+            light: 'light.png',
+            dark: 'dark.png'
+        }
+    };
+    
+    // Initialize logo system
+    function updateLogos() {
+        const theme = body.getAttribute('data-theme') || 'light';
+        const cornerPath = LOGO_PATHS.corner[theme];
+        const centerPath = LOGO_PATHS.center[theme];
+        
+        // Set corner logo with fallback
+        if (cornerLogoImg) {
+            cornerLogoImg.src = cornerPath;
+            cornerLogoImg.onerror = () => {
+                // Fallback to SVG icon if PNG not found
+                cornerLogo.innerHTML = `
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="4" y="10" width="40" height="28" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                        <circle cx="14" cy="24" r="5" stroke="currentColor" stroke-width="2" fill="none"/>
+                        <circle cx="34" cy="24" r="5" stroke="currentColor" stroke-width="2" fill="none"/>
+                        <path d="M14 29 Q24 26 34 29" stroke="currentColor" stroke-width="2" fill="none"/>
+                        <circle cx="24" cy="8" r="2" fill="var(--accent-color)"/>
+                    </svg>
+                `;
+            };
+        }
+        
+        // Set center logo with fallback
+        if (centerLogoImg) {
+            centerLogoImg.src = centerPath;
+            centerLogoImg.onerror = () => {
+                // Fallback to SVG cassette if PNG not found
+                centerLogo.innerHTML = `
+                    <svg width="140" height="93" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="cassetteGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:var(--cassette-color-1);stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:var(--cassette-color-2);stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <rect x="10" y="15" width="100" height="50" rx="4" fill="url(#cassetteGrad)" opacity="0.9"/>
+                        <rect x="15" y="20" width="90" height="40" rx="3" fill="var(--bg-color)" opacity="0.2"/>
+                        <circle cx="35" cy="40" r="10" stroke="var(--bg-color)" stroke-width="2" fill="none"/>
+                        <circle cx="85" cy="40" r="10" stroke="var(--bg-color)" stroke-width="2" fill="none"/>
+                        <circle cx="35" cy="40" r="5" fill="var(--bg-color)" opacity="0.4"/>
+                        <circle cx="85" cy="40" r="5" fill="var(--bg-color)" opacity="0.4"/>
+                        <path d="M45 40 Q60 35 75 40" stroke="var(--bg-color)" stroke-width="1.5" fill="none" opacity="0.6"/>
+                        <rect x="50" y="25" width="20" height="8" rx="2" fill="var(--bg-color)" opacity="0.3"/>
+                    </svg>
+                `;
+            };
+        }
+        
+        // Set modal logo
+        if (modalLogoImg) {
+            modalLogoImg.src = centerPath;
+        }
+    }
+    
+    updateLogos();
     let chopGain; // For chop effect volume control
     
     // Effect units
@@ -259,14 +360,27 @@ document.addEventListener('DOMContentLoaded', () => {
         dryGain = new Tone.Gain(0.5).toDestination();
     }
 
-    // Theme Toggle
-    themeToggle.addEventListener('click', () => {
+    // Dropdown Menu Toggle
+    settingsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!settingsBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+            dropdownMenu.style.display = 'none';
+        }
+    });
+    
+    // Theme Toggle from menu
+    function toggleTheme() {
         const currentTheme = body.getAttribute('data-theme');
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
         body.setAttribute('data-theme', newTheme);
         
-        // Update icon
-        const icon = themeToggle.querySelector('i');
+        // Update menu icon
+        const icon = themeToggleMenu.querySelector('i');
         if (newTheme === 'dark') {
             icon.classList.remove('fa-moon');
             icon.classList.add('fa-sun');
@@ -275,24 +389,73 @@ document.addEventListener('DOMContentLoaded', () => {
             icon.classList.add('fa-moon');
         }
         
-        // Save preference
+        // Save preference and update logos
         localStorage.setItem('theme', newTheme);
+        updateLogos();
+    }
+    
+    themeToggleMenu.addEventListener('click', () => {
+        toggleTheme();
+        dropdownMenu.style.display = 'none';
     });
     
     // Load saved theme
     const savedTheme = localStorage.getItem('theme') || 'light';
     body.setAttribute('data-theme', savedTheme);
-    const icon = themeToggle.querySelector('i');
+    const themeIcon = themeToggleMenu.querySelector('i');
     if (savedTheme === 'dark') {
-        icon.classList.remove('fa-moon');
-        icon.classList.add('fa-sun');
+        themeIcon.classList.remove('fa-moon');
+        themeIcon.classList.add('fa-sun');
+    }
+    
+    // About Menu
+    aboutMenu.addEventListener('click', () => {
+        aboutModal.style.display = 'flex';
+        dropdownMenu.style.display = 'none';
+    });
+    
+    aboutClose.addEventListener('click', () => {
+        aboutModal.style.display = 'none';
+    });
+    
+    aboutModal.addEventListener('click', (e) => {
+        if (e.target === aboutModal) {
+            aboutModal.style.display = 'none';
+        }
+    });
+    
+    // Pre-Order Menu (opens marketing modal)
+    preorderMenu.addEventListener('click', () => {
+        marketingModal.style.display = 'flex';
+        dropdownMenu.style.display = 'none';
+    });
+    
+    // Center Logo Click - Opens Marketing Modal
+    if (centerLogo) {
+        centerLogo.addEventListener('click', () => {
+            marketingModal.style.display = 'flex';
+        });
+    }
+    
+    // Marketing Modal
+    marketingClose.addEventListener('click', () => {
+        marketingModal.style.display = 'none';
+    });
+    
+    marketingModal.addEventListener('click', (e) => {
+        if (e.target === marketingModal) {
+            marketingModal.style.display = 'none';
+        }
+    });
+    
+    // Join Beta Button
+    if (joinBetaBtn) {
+        joinBetaBtn.addEventListener('click', () => {
+            showNotification('Beta program coming soon! Stay tuned.', 'info');
+        });
     }
 
     // Settings Modal
-    settingsBtn.addEventListener('click', () => {
-        settingsModal.style.display = 'flex';
-    });
-    
     settingsClose.addEventListener('click', () => {
         settingsModal.style.display = 'none';
     });
@@ -303,6 +466,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // EQ Enable Checkbox
+    eqEnableCheckbox.addEventListener('change', () => {
+        if (eqEnableCheckbox.checked) {
+            eqControlsDiv.style.display = 'block';
+            eqBypassBtn.disabled = false;
+        } else {
+            eqControlsDiv.style.display = 'none';
+            eqBypassBtn.disabled = true;
+            eqBypassed = false;
+            eqBypassBtn.classList.remove('bypassed');
     // EQ Modal
     eqBtn.addEventListener('click', () => {
         eqModal.style.display = 'flex';
@@ -379,6 +552,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+    
+    // EQ Bypass Button - Immediately toggles EQ processing
+    eqBypassBtn.addEventListener('click', () => {
+        eqBypassed = !eqBypassed;
+        
+        if (eqBypassed) {
+            eqBypassBtn.classList.add('bypassed');
+            eqBypassBtn.innerHTML = '<i class="fas fa-power-off"></i> Bypassed';
+            
+            // Immediately set EQ to neutral
+            if (lowShelf) {
+                lowShelf.low.value = 0;
+                lowShelf.mid.value = 0;
+                lowShelf.high.value = 0;
+            }
+        } else {
+            eqBypassBtn.classList.remove('bypassed');
+            eqBypassBtn.innerHTML = '<i class="fas fa-power-off"></i> Bypass';
+            
+            // Restore EQ settings
+            updateEQ();
+        }
+        
+        showNotification(eqBypassed ? 'EQ Bypassed' : 'EQ Active', 'info');
+    });
 
     // Knob visualization update
     function updateKnobIndicator(knob, indicator) {
@@ -394,20 +592,86 @@ document.addEventListener('DOMContentLoaded', () => {
         indicator.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
     }
 
-    // Speed Knob
+    // Knob smoothing helper function
+    function smoothKnobValue(currentValue, newValue, smoothingState, min, max) {
+        const now = Date.now();
+        const deltaTime = now - smoothingState.lastTime;
+        
+        // Calculate max allowed change based on time elapsed
+        const maxChange = KNOB_SMOOTHING_CONFIG.maxRatePerMs * deltaTime;
+        const valueRange = max - min;
+        const maxDelta = (maxChange / 1000) * valueRange;
+        
+        // Clamp the change
+        let delta = newValue - smoothingState.lastValue;
+        if (Math.abs(delta) > maxDelta) {
+            delta = Math.sign(delta) * maxDelta;
+        }
+        
+        const smoothedValue = smoothingState.lastValue + delta;
+        
+        // Prevent zero/NaN values
+        const safeValue = isNaN(smoothedValue) ? currentValue : smoothedValue;
+        const clampedValue = Math.max(min, Math.min(max, safeValue));
+        
+        smoothingState.lastValue = clampedValue;
+        smoothingState.lastTime = now;
+        smoothingState.targetValue = newValue;
+        
+        return clampedValue;
+    }
+    
+    // Speed Knob with smoothing
     speedKnob.addEventListener('input', () => {
-        const value = speedKnob.value;
-        speedValue.textContent = value + '%';
+        const rawValue = parseFloat(speedKnob.value);
+        const smoothedValue = smoothKnobValue(
+            speedSmoothing.lastValue,
+            rawValue,
+            speedSmoothing,
+            50,
+            200
+        );
+        
+        speedValue.textContent = Math.round(smoothedValue) + '%';
         updateKnobIndicator(speedKnob, speedIndicator);
-        updateAudio();
+        updateAudioSmoothed();
     });
     
-    // Pitch Knob
+    // Pitch Knob with smoothing
     pitchKnob.addEventListener('input', () => {
-        const value = parseFloat(pitchKnob.value).toFixed(1);
-        pitchValue.textContent = value + ' st';
+        const rawValue = parseFloat(pitchKnob.value);
+        const smoothedValue = smoothKnobValue(
+            pitchSmoothing.lastValue,
+            rawValue,
+            pitchSmoothing,
+            -12,
+            12
+        );
+        
+        pitchValue.textContent = smoothedValue.toFixed(1) + ' st';
         updateKnobIndicator(pitchKnob, pitchIndicator);
-        updateAudio();
+        updateAudioSmoothed();
+    });
+    
+    // Add dragging class for cursor feedback
+    [speedKnob, pitchKnob].forEach(knob => {
+        const wrapper = knob.parentElement;
+        
+        knob.addEventListener('mousedown', () => {
+            wrapper.classList.add('dragging');
+        });
+        
+        knob.addEventListener('touchstart', () => {
+            wrapper.classList.add('dragging');
+        });
+        
+        document.addEventListener('mouseup', () => {
+            wrapper.classList.remove('dragging');
+        });
+        
+        document.addEventListener('touchend', () => {
+            wrapper.classList.remove('dragging');
+        });
     });
 
     // Initialize knob indicators
@@ -442,6 +706,10 @@ document.addEventListener('DOMContentLoaded', () => {
         midDbValue.textContent = midGain.toFixed(1) + ' dB';
         highDbValue.textContent = highGain.toFixed(1) + ' dB';
 
+        if (!lowShelf) return;
+        
+        // Don't update if bypassed
+        if (eqBypassed) return;
         if (!lowShelf || isEqBypassed) return;
 
         if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
@@ -455,6 +723,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Audio Update Function with smoothing (prevents clicks/pops)
+    function updateAudioSmoothed() {
     // Chop Effect Controls (only if elements exist)
     if (chopCrossfader && crossfaderValue) {
         chopCrossfader.addEventListener('input', (e) => {
@@ -680,19 +950,30 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateAudio() {
         if (!player || !pitchShift) return;
 
-        const playbackRate = parseFloat(speedKnob.value) / 100;
-        player.playbackRate = playbackRate;
+        const playbackRate = speedSmoothing.lastValue / 100;
+        
+        // Prevent zero playback rate
+        const safePlaybackRate = Math.max(0.1, Math.min(4, playbackRate));
+        player.playbackRate = safePlaybackRate;
 
         // Compensate for pitch change from playback rate
-        const timeStretchPitchCorrection = -12 * Math.log2(playbackRate);
-        const userPitchBend = parseFloat(pitchKnob.value);
+        const timeStretchPitchCorrection = -12 * Math.log2(safePlaybackRate);
+        const userPitchBend = pitchSmoothing.lastValue;
         const targetPitch = userPitchBend + timeStretchPitchCorrection;
+        
+        // Prevent NaN values
+        const safePitch = isNaN(targetPitch) ? 0 : targetPitch;
 
         if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
-            pitchShift.pitch.linearRampToValueAtTime(targetPitch, Tone.context.currentTime + smoothingTime);
+            pitchShift.pitch.linearRampToValueAtTime(safePitch, Tone.context.currentTime + smoothingTime);
         } else if (pitchShift) {
-            pitchShift.pitch = targetPitch;
+            pitchShift.pitch = safePitch;
         }
+    }
+    
+    // Legacy update function for compatibility
+    function updateAudio() {
+        updateAudioSmoothed();
     }
 
     // Toolbar: Load Button
@@ -809,11 +1090,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Add cassette animation
-        if (cassetteIcon) {
-            cassetteIcon.style.animation = 'spin 1s ease-in-out';
+        // Add center logo animation
+        if (centerLogo) {
+            centerLogo.style.animation = 'logoSpin 1s ease-in-out';
             setTimeout(() => {
-                cassetteIcon.style.animation = '';
+                centerLogo.style.animation = '';
             }, 1000);
         }
 
