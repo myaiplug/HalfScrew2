@@ -1095,16 +1095,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateAudio() {
         updateAudioSmoothed();
     }
-    }
 
     // Toolbar: Load Button
-    loadBtn.addEventListener('click', () => {
-        fileInput.click();
+    safeAddListener(loadBtn, 'click', () => {
+        if (fileInput) fileInput.click();
     });
 
     // Monitor function for repeat functionality
     function checkTransportEnd() {
-        if (player && player.buffer && player.state === 'started' && Tone.Transport.state === 'started') {
+        if (player && player.buffer && player.state === 'started' && typeof Tone !== 'undefined' && Tone.Transport && Tone.Transport.state === 'started') {
             // Use Tone.Transport.seconds for proper numeric comparison
             if (Tone.Transport.seconds >= player.buffer.duration) {
                 if (isRepeatOn) {
@@ -1112,7 +1111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     Tone.Transport.stop();
                     isPlaying = false;
-                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                    if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
                     if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
                 }
             }
@@ -1123,21 +1122,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Toolbar: Play/Pause Button
-    playPauseBtn.addEventListener('click', () => {
+    safeAddListener(playPauseBtn, 'click', () => {
         if (typeof Tone === 'undefined') {
             showNotification('Audio processing library not loaded.', 'error');
             return;
         }
         
         if (player && player.loaded) {
-            if (Tone.context.state !== 'running') {
+            if (Tone.context && Tone.context.state !== 'running') {
                 Tone.context.resume();
             }
             
-            if (Tone.Transport.state !== 'started') {
+            if (Tone.Transport && Tone.Transport.state !== 'started') {
                 Tone.Transport.start();
                 isPlaying = true;
-                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
+                if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
                 if (playButton) playButton.innerHTML = '<i class="fas fa-pause"></i> Pause';
                 checkTransportEnd(); // Start monitoring for repeat
                 
@@ -1146,9 +1145,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     startChopEffect();
                 }
             } else {
-                Tone.Transport.pause();
+                if (Tone.Transport) Tone.Transport.pause();
                 isPlaying = false;
-                playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
                 if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
                 
                 // Stop chop effect when pausing
@@ -1158,14 +1157,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Toolbar: Stop Button
-    stopBtn.addEventListener('click', () => {
+    safeAddListener(stopBtn, 'click', () => {
         if (typeof Tone === 'undefined') return;
         
-        if (Tone.Transport.state !== 'stopped') {
+        if (Tone.Transport && Tone.Transport.state !== 'stopped') {
             Tone.Transport.stop();
             Tone.Transport.position = 0;
             isPlaying = false;
-            playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+            if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
             if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
             
             // Stop chop effect
@@ -1174,29 +1173,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Toolbar: Rewind Button
-    rewindBtn.addEventListener('click', () => {
+    safeAddListener(rewindBtn, 'click', () => {
         if (typeof Tone === 'undefined') return;
         
-        Tone.Transport.position = 0;
-        showNotification('Rewound to start', 'info');
+        if (Tone.Transport) {
+            Tone.Transport.position = 0;
+            showNotification('Rewound to start', 'info');
+        }
     });
 
     // Toolbar: Repeat Button
-    repeatBtn.addEventListener('click', () => {
+    safeAddListener(repeatBtn, 'click', () => {
         isRepeatOn = !isRepeatOn;
-        repeatBtn.setAttribute('data-repeat', isRepeatOn ? 'on' : 'off');
+        if (repeatBtn) repeatBtn.setAttribute('data-repeat', isRepeatOn ? 'on' : 'off');
         showNotification(`Repeat ${isRepeatOn ? 'enabled' : 'disabled'}`, 'info');
     });
 
     // Toolbar: Download Button
-    toolbarDownloadBtn.addEventListener('click', () => {
+    safeAddListener(toolbarDownloadBtn, 'click', () => {
         if (downloadButton) {
             downloadButton.click();
         }
     });
 
     // File Input
-    fileInput.addEventListener('change', (e) => {
+    safeAddListener(fileInput, 'change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
@@ -1224,7 +1225,7 @@ document.addEventListener('DOMContentLoaded', () => {
             player.dispose();
         }
         
-        if (Tone.Transport.state !== 'stopped') {
+        if (Tone.Transport && Tone.Transport.state !== 'stopped') {
             Tone.Transport.stop();
             Tone.Transport.position = 0;
             if (playButton) {
@@ -1234,10 +1235,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         player = new Tone.Player(url, () => {
             // Enable toolbar buttons
-            playPauseBtn.disabled = false;
-            stopBtn.disabled = false;
-            rewindBtn.disabled = false;
-            toolbarDownloadBtn.disabled = false;
+            if (playPauseBtn) playPauseBtn.disabled = false;
+            if (stopBtn) stopBtn.disabled = false;
+            if (rewindBtn) rewindBtn.disabled = false;
+            if (toolbarDownloadBtn) toolbarDownloadBtn.disabled = false;
             
             // Enable legacy buttons
             if (playButton) playButton.disabled = false;
@@ -1268,49 +1269,48 @@ document.addEventListener('DOMContentLoaded', () => {
         player.connect(wetDry);
     });
 
-    // Play Button
-    if (playButton) {
-        playButton.addEventListener('click', () => {
-            if (typeof Tone === 'undefined') {
-                showNotification('Audio processing library not loaded.', 'error');
-                return;
+    // Play Button (legacy)
+    safeAddListener(playButton, 'click', () => {
+        if (typeof Tone === 'undefined') {
+            showNotification('Audio processing library not loaded.', 'error');
+            return;
+        }
+        
+        if (player && player.loaded) {
+            if (Tone.context && Tone.context.state !== 'running') {
+                Tone.context.resume();
             }
             
-            if (player && player.loaded) {
-                if (Tone.context.state !== 'running') {
-                    Tone.context.resume();
-                }
+            if (Tone.Transport && Tone.Transport.state !== 'started') {
+                Tone.Transport.start();
+                if (playButton) playButton.innerHTML = '<i class="fas fa-pause"></i> Pause';
+                isPlaying = true;
                 
-                if (Tone.Transport.state !== 'started') {
-                    Tone.Transport.start();
-                    playButton.innerHTML = '<i class="fas fa-pause"></i> Pause';
-                    isPlaying = true;
-                    
-                    // Start chop effect if crossfader is not at 0
-                    if (chopIntensity > 0) {
-                        startChopEffect();
-                    }
-                } else {
-                    Tone.Transport.pause();
-                    playButton.innerHTML = '<i class="fas fa-play"></i> Play';
-                    isPlaying = false;
-                    
-                    // Stop chop effect when pausing
-                    stopChopEffect();
+                // Start chop effect if crossfader is not at 0
+                if (chopIntensity > 0) {
+                    startChopEffect();
                 }
+            } else {
+                if (Tone.Transport) Tone.Transport.pause();
+                if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
+                isPlaying = false;
+                
+                // Stop chop effect when pausing
+                stopChopEffect();
             }
-        });
-    }
+        }
+    });
 
     // Download Button - Fixed for audio quality issues
     let processedAudioBlob = null;
     
-    if (downloadButton) {
-        downloadButton.addEventListener('click', async () => {
-            if (!player || !player.loaded) return;
+    safeAddListener(downloadButton, 'click', async () => {
+        if (!player || !player.loaded) return;
 
+        if (downloadButton) {
             downloadButton.disabled = true;
             downloadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        }
 
             try {
                 const playbackRate = parseFloat(speedKnob.value) / 100;
@@ -1426,11 +1426,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error("Error processing audio:", error);
                 showNotification('Error processing audio', 'error');
             } finally {
+                if (downloadButton) {
+                    downloadButton.disabled = false;
+                    downloadButton.innerHTML = '<i class="fas fa-download"></i> Download';
+                }
+            }
+        } catch (error) {
+            console.error("Error in download handler:", error);
+            showNotification('Error processing audio', 'error');
+            if (downloadButton) {
                 downloadButton.disabled = false;
                 downloadButton.innerHTML = '<i class="fas fa-download"></i> Download';
             }
-        });
-    }
+        }
+    });
 
     // Helper Functions
     function validateAudioFile(file) {
@@ -1472,8 +1481,8 @@ document.addEventListener('DOMContentLoaded', () => {
         player.volume.value = 20 * Math.log10(Math.min(gainAdjustment, 2));
     }
 
-    lufsNormalizeCheckbox.addEventListener('change', () => {
-        if (lufsNormalizeCheckbox.checked && player && player.loaded) {
+    safeAddListener(lufsNormalizeCheckbox, 'change', () => {
+        if (lufsNormalizeCheckbox && lufsNormalizeCheckbox.checked && player && player.loaded) {
             applyLUFSNormalization();
         } else if (player) {
             player.volume.value = 0;
@@ -1609,66 +1618,59 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Side Panel Toggle
-    if (sidePanelToggle) {
-        sidePanelToggle.addEventListener('click', () => {
-            isSidePanelOpen = !isSidePanelOpen;
-            sideEffectsPanel.classList.toggle('open', isSidePanelOpen);
-            sidePanelToggle.classList.toggle('active', isSidePanelOpen);
-        });
-    }
+    safeAddListener(sidePanelToggle, 'click', () => {
+        isSidePanelOpen = !isSidePanelOpen;
+        toggleClassSafe(sideEffectsPanel, 'open', isSidePanelOpen);
+        toggleClassSafe(sidePanelToggle, 'active', isSidePanelOpen);
+    });
 
-    if (sidePanelClose) {
-        sidePanelClose.addEventListener('click', () => {
-            isSidePanelOpen = false;
-            sideEffectsPanel.classList.remove('open');
-            sidePanelToggle.classList.remove('active');
-        });
-    }
+    safeAddListener(sidePanelClose, 'click', () => {
+        isSidePanelOpen = false;
+        toggleClassSafe(sideEffectsPanel, 'open', false);
+        toggleClassSafe(sidePanelToggle, 'active', false);
+    });
 
     // Effect Controls - Reverb
-    if (reverbMix && reverbWet) {
-        reverbMix.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value) / 100;
-            reverbValue.textContent = Math.round(value * 100) + '%';
-            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+    safeAddListener(reverbMix, 'input', (e) => {
+        const value = parseFloat(e.target.value) / 100;
+        if (reverbValue) reverbValue.textContent = Math.round(value * 100) + '%';
+        if (reverbWet) {
+            if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state === 'running') {
                 reverbWet.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
-            } else if (reverbWet) {
+            } else {
                 reverbWet.gain.value = value;
             }
-        });
-    }
+        }
+    });
 
-    if (reverbDecay && reverb) {
-        reverbDecay.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            reverbDecayValue.textContent = value.toFixed(1) + 's';
-            if (reverb) {
-                reverb.decay = value;
-            }
-        });
-    }
+    safeAddListener(reverbDecay, 'input', (e) => {
+        const value = parseFloat(e.target.value);
+        if (reverbDecayValue) reverbDecayValue.textContent = value.toFixed(1) + 's';
+        if (reverb) {
+            reverb.decay = value;
+        }
+    });
 
     // Effect Controls - Delay
-    if (delayMix && delayWet) {
-        delayMix.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value) / 100;
-            delayValue.textContent = Math.round(value * 100) + '%';
-            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+    safeAddListener(delayMix, 'input', (e) => {
+        const value = parseFloat(e.target.value) / 100;
+        if (delayValue) delayValue.textContent = Math.round(value * 100) + '%';
+        if (delayWet) {
+            if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state === 'running') {
                 delayWet.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
-            } else if (delayWet) {
+            } else {
                 delayWet.gain.value = value;
             }
-        });
-    }
+        }
+    });
 
-    if (delayTime && delay) {
-        delayTime.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            delayTimeValue.textContent = value.toFixed(2) + 's';
-            if (delay) {
-                delay.delayTime.value = value;
-            }
-        });
+    safeAddListener(delayTime, 'input', (e) => {
+        const value = parseFloat(e.target.value);
+        if (delayTimeValue) delayTimeValue.textContent = value.toFixed(2) + 's';
+        if (delay) {
+            delay.delayTime.value = value;
+        }
+    });
     }
 
     if (delayFeedback && delay) {
@@ -1677,91 +1679,87 @@ document.addEventListener('DOMContentLoaded', () => {
             delayFeedbackValue.textContent = value.toFixed(2);
             if (delay) {
                 delay.feedback.value = value;
-            }
-        });
-    }
+    safeAddListener(delayFeedback, 'input', (e) => {
+        const value = parseFloat(e.target.value);
+        if (delayFeedbackValue) delayFeedbackValue.textContent = value.toFixed(2);
+        if (delay) {
+            delay.feedback.value = value;
+        }
+    });
 
     // Effect Controls - Phaser
-    if (phaserMix && phaserWet) {
-        phaserMix.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value) / 100;
-            phaserValue.textContent = Math.round(value * 100) + '%';
-            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+    safeAddListener(phaserMix, 'input', (e) => {
+        const value = parseFloat(e.target.value) / 100;
+        if (phaserValue) phaserValue.textContent = Math.round(value * 100) + '%';
+        if (phaserWet) {
+            if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state === 'running') {
                 phaserWet.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
-            } else if (phaserWet) {
+            } else {
                 phaserWet.gain.value = value;
             }
-        });
-    }
+        }
+    });
 
-    if (phaserFreq && phaser) {
-        phaserFreq.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            phaserFreqValue.textContent = value.toFixed(1) + ' Hz';
-            if (phaser) {
-                phaser.frequency.value = value;
-            }
-        });
-    }
+    safeAddListener(phaserFreq, 'input', (e) => {
+        const value = parseFloat(e.target.value);
+        if (phaserFreqValue) phaserFreqValue.textContent = value.toFixed(1) + ' Hz';
+        if (phaser) {
+            phaser.frequency.value = value;
+        }
+    });
 
-    if (phaserDepth && phaser) {
+    safeAddListener(phaserDepth, 'input', (e) => {
         const MAX_PHASER_OCTAVES = 5; // Maximum octaves for phaser depth
-        phaserDepth.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            phaserDepthValue.textContent = value.toFixed(2);
-            // Phaser depth is controlled by octaves in Tone.js
-            if (phaser) {
-                phaser.octaves = value * MAX_PHASER_OCTAVES; // Scale 0-1 to 0-5 octaves
-            }
-        });
-    }
+        const value = parseFloat(e.target.value);
+        if (phaserDepthValue) phaserDepthValue.textContent = value.toFixed(2);
+        // Phaser depth is controlled by octaves in Tone.js
+        if (phaser) {
+            phaser.octaves = value * MAX_PHASER_OCTAVES; // Scale 0-1 to 0-5 octaves
+        }
+    });
 
     // Effect Controls - Chorus
-    if (chorusMix && chorusWet) {
-        chorusMix.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value) / 100;
-            chorusValue.textContent = Math.round(value * 100) + '%';
-            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+    safeAddListener(chorusMix, 'input', (e) => {
+        const value = parseFloat(e.target.value) / 100;
+        if (chorusValue) chorusValue.textContent = Math.round(value * 100) + '%';
+        if (chorusWet) {
+            if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state === 'running') {
                 chorusWet.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
-            } else if (chorusWet) {
+            } else {
                 chorusWet.gain.value = value;
             }
-        });
-    }
+        }
+    });
 
-    if (chorusFreq && chorus) {
-        chorusFreq.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            chorusFreqValue.textContent = value.toFixed(1) + ' Hz';
-            if (chorus) {
-                chorus.frequency.value = value;
-            }
-        });
-    }
+    safeAddListener(chorusFreq, 'input', (e) => {
+        const value = parseFloat(e.target.value);
+        if (chorusFreqValue) chorusFreqValue.textContent = value.toFixed(1) + ' Hz';
+        if (chorus) {
+            chorus.frequency.value = value;
+        }
+    });
 
-    if (chorusDepth && chorus) {
-        chorusDepth.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            chorusDepthValue.textContent = value.toFixed(2);
-            if (chorus) {
-                chorus.depth = value;
-            }
-        });
-    }
+    safeAddListener(chorusDepth, 'input', (e) => {
+        const value = parseFloat(e.target.value);
+        if (chorusDepthValue) chorusDepthValue.textContent = value.toFixed(2);
+        if (chorus) {
+            chorus.depth = value;
+        }
+    });
 
     // Effect Controls - Stereo Width
-    if (stereoWidth && stereoWidener) {
-        stereoWidth.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value) / 100;
-            stereoWidthValue.textContent = Math.round(value * 100) + '%';
-            // Stereo widener: Map 0-100% slider to -1 to +1 range
-            // 0% = -1 (inverted stereo), 50% = 0 (normal), 100% = +1 (wide)
-            const width = value * 2 - 1;
-            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
+    safeAddListener(stereoWidth, 'input', (e) => {
+        const value = parseFloat(e.target.value) / 100;
+        if (stereoWidthValue) stereoWidthValue.textContent = Math.round(value * 100) + '%';
+        // Stereo widener: Map 0-100% slider to -1 to +1 range
+        // 0% = -1 (inverted stereo), 50% = 0 (normal), 100% = +1 (wide)
+        const width = value * 2 - 1;
+        if (stereoWidener) {
+            if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state === 'running') {
                 stereoWidener.width.linearRampToValueAtTime(width, Tone.context.currentTime + smoothingTime);
-            } else if (stereoWidener) {
+            } else {
                 stereoWidener.width.value = width;
             }
-        });
-    }
+        }
+    });
 });
