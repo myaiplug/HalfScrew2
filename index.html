@@ -36,10 +36,10 @@
 
     <!-- Top right dropdown menu -->
     <div class="top-right-menu">
-        <button class="settings-btn" id="settings-btn" aria-label="Settings" aria-expanded="false">
+        <button class="settings-btn" id="settings-btn" aria-label="Settings">
             <i class="fas fa-ellipsis-v"></i>
         </button>
-        <div class="dropdown-menu" id="dropdown-menu">
+        <div class="dropdown-menu" id="dropdown-menu" style="display: none;">
             <button id="theme-toggle-menu" class="dropdown-item">
                 <i class="fas fa-moon"></i> Toggle Theme
             </button>
@@ -261,7 +261,7 @@
     <audio id="audio-player" style="display: none;"></audio>
 
     <!-- EQ Modal -->
-    <div id="eq-modal" class="modal-overlay" aria-hidden="true">
+    <div id="eq-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content eq-modal-content">
             <button class="modal-close" id="eq-close">&times;</button>
             <h2>EQ & Visualizer</h2>
@@ -292,14 +292,13 @@
                 </div>
             </div>
             <button class="bypass-btn" id="eq-bypass-btn">
-                <i class="fas fa-power-off"></i>
                 <span class="bypass-text">Bypass</span>
             </button>
         </div>
     </div>
 
     <!-- Settings Modal -->
-    <div id="settings-modal" class="modal-overlay" aria-hidden="true">
+    <div id="settings-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <button class="modal-close" id="settings-close">&times;</button>
             <h2>Settings</h2>
@@ -337,7 +336,7 @@
     </div>
 
     <!-- Marketing Modal -->
-    <div id="marketing-modal" class="modal-overlay" aria-hidden="true">
+    <div id="marketing-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content marketing-modal">
             <button class="modal-close" id="marketing-close">&times;</button>
             <div class="modal-logo">
@@ -365,7 +364,7 @@
     </div>
 
     <!-- About Modal -->
-    <div id="about-modal" class="modal-overlay" aria-hidden="true">
+    <div id="about-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <button class="modal-close" id="about-close">&times;</button>
             <h2>About HalfScrew</h2>
