@@ -137,6 +137,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const presetLofi = document.getElementById('preset-lofi');
     const presetScrewed = document.getElementById('preset-screwed');
     const presetChopped = document.getElementById('preset-chopped');
+    const presetRubberband = document.getElementById('preset-rubberband');
+    const presetTape = document.getElementById('preset-tape');
+    const presetVintage = document.getElementById('preset-vintage');
     const presetReset = document.getElementById('preset-reset');
     
     // DJ Chop effect controls (legacy - may not exist in HTML)
@@ -349,12 +352,14 @@ document.addEventListener('DOMContentLoaded', () => {
         showNotification('Audio library not loaded. Some features may not work.', 'warning');
     } else {
         // Initialize Tone.js components with pro-quality settings
-        // High-quality pitch shifting with window size optimization
+        // High-quality pitch shifting with optimized window size for minimal artifacts
+        // Settings inspired by Rubberband and professional audio tools
         pitchShift = new Tone.PitchShift({ 
             pitch: 0,
-            windowSize: 0.1, // Smaller window for better transient response
-            delayTime: 0, // Minimize latency
-            feedback: 0 // No feedback for cleaner sound
+            windowSize: 0.03, // Smaller window (30ms) for better transient preservation
+            delayTime: 0.01, // Minimal latency while maintaining quality
+            feedback: 0, // No feedback for cleaner sound
+            wet: 1 // Full wet signal for processed audio
         });
         
         // Enhanced EQ with better frequency separation
@@ -1985,6 +1990,74 @@ document.addEventListener('DOMContentLoaded', () => {
             chopMix?.dispatchEvent(new Event('input'));
             chopRate?.dispatchEvent(new Event('input'));
             delayMix?.dispatchEvent(new Event('input'));
+        });
+    }
+
+    if (presetRubberband) {
+        presetRubberband.addEventListener('click', () => {
+            // Rubberband-style preset (elastic time/pitch manipulation)
+            // Simulates Rubberband's "fine" quality setting with minimal artifacts
+            if (speedKnob) speedKnob.value = 80;
+            if (pitchKnob) pitchKnob.value = -2;
+            if (chorusMix) chorusMix.value = 15;
+            if (phaserMix) phaserMix.value = 10;
+            if (stereoWidth) stereoWidth.value = 60;
+            if (wetdryKnob) wetdryKnob.value = 100;
+            
+            // Trigger input events
+            speedKnob?.dispatchEvent(new Event('input'));
+            pitchKnob?.dispatchEvent(new Event('input'));
+            chorusMix?.dispatchEvent(new Event('input'));
+            phaserMix?.dispatchEvent(new Event('input'));
+            stereoWidth?.dispatchEvent(new Event('input'));
+            wetdryKnob?.dispatchEvent(new Event('input'));
+        });
+    }
+
+    if (presetTape) {
+        presetTape.addEventListener('click', () => {
+            // Tape slowdown preset (simulates tape machine slowing down)
+            // Inspired by SOX tape emulation
+            if (speedKnob) speedKnob.value = 70;
+            if (pitchKnob) pitchKnob.value = -4;
+            if (vinylMix) vinylMix.value = 15;
+            if (vinylWarmth) vinylWarmth.value = 70;
+            if (reverbMix) reverbMix.value = 15;
+            if (lowEqKnob) lowEqKnob.value = 4;
+            if (highEqKnob) highEqKnob.value = -3;
+            
+            // Trigger input events
+            speedKnob?.dispatchEvent(new Event('input'));
+            pitchKnob?.dispatchEvent(new Event('input'));
+            vinylMix?.dispatchEvent(new Event('input'));
+            vinylWarmth?.dispatchEvent(new Event('input'));
+            reverbMix?.dispatchEvent(new Event('input'));
+        });
+    }
+
+    if (presetVintage) {
+        presetVintage.addEventListener('click', () => {
+            // Vintage preset (old record/radio sound)
+            // Combines lo-fi effects for authentic vintage tone
+            if (speedKnob) speedKnob.value = 90;
+            if (pitchKnob) pitchKnob.value = -1;
+            if (bitcrusherMix) bitcrusherMix.value = 25;
+            if (bitcrusherBits) bitcrusherBits.value = 10;
+            if (vinylMix) vinylMix.value = 30;
+            if (vinylWarmth) vinylWarmth.value = 80;
+            if (lowEqKnob) lowEqKnob.value = 2;
+            if (midEqKnob) midEqKnob.value = -2;
+            if (highEqKnob) highEqKnob.value = -8;
+            if (stereoWidth) stereoWidth.value = 30;
+            
+            // Trigger input events
+            speedKnob?.dispatchEvent(new Event('input'));
+            pitchKnob?.dispatchEvent(new Event('input'));
+            bitcrusherMix?.dispatchEvent(new Event('input'));
+            bitcrusherBits?.dispatchEvent(new Event('input'));
+            vinylMix?.dispatchEvent(new Event('input'));
+            vinylWarmth?.dispatchEvent(new Event('input'));
+            stereoWidth?.dispatchEvent(new Event('input'));
         });
     }
 
