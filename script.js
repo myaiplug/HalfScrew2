@@ -7,29 +7,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const speedIndicator = speedKnob?.parentElement.querySelector('.knob-indicator');
     const pitchIndicator = pitchKnob?.parentElement.querySelector('.knob-indicator');
     
-    // Logo elements
-    const cornerLogo = document.getElementById('corner-logo');
-    const cornerLogoImg = document.getElementById('corner-logo-img');
-    const centerLogo = document.getElementById('center-logo');
-    const centerLogoImg = document.getElementById('center-logo-img');
-    const modalLogoImg = document.getElementById('modal-logo-img');
+    // Theme toggle
+    const themeToggle = document.getElementById('theme-toggle');
+    const body = document.body;
     
-    // Menu and modals
     // Modals
     const settingsBtn = document.getElementById('settings-btn');
-    const dropdownMenu = document.getElementById('dropdown-menu');
-    const themeToggleMenu = document.getElementById('theme-toggle-menu');
-    const aboutMenu = document.getElementById('about-menu');
-    const preorderMenu = document.getElementById('preorder-menu');
     const settingsModal = document.getElementById('settings-modal');
     const settingsClose = document.getElementById('settings-close');
-    const marketingModal = document.getElementById('marketing-modal');
-    const marketingClose = document.getElementById('marketing-close');
-    const aboutModal = document.getElementById('about-modal');
-    const aboutClose = document.getElementById('about-close');
-    const joinBetaBtn = document.getElementById('join-beta');
-    
-    const body = document.body;
     const eqBtn = document.getElementById('eq-btn');
     const eqModal = document.getElementById('eq-modal');
     const eqClose = document.getElementById('eq-close');
@@ -51,15 +36,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Settings controls
     const wetDryMixSlider = document.getElementById('wet-dry-mix');
     const wetDryValue = document.getElementById('wet-dry-value');
-    const eqEnableCheckbox = document.getElementById('eq-enable');
-    const eqBypassBtn = document.getElementById('eq-bypass');
     const lufsNormalizeCheckbox = document.getElementById('lufs-normalize');
     
     // EQ controls
     const lowEqKnob = document.getElementById('low-eq');
     const midEqKnob = document.getElementById('mid-eq');
     const highEqKnob = document.getElementById('high-eq');
-    const highEqValue = document.getElementById('high-eq-value');
     const lowDbValue = document.getElementById('low-db');
     const midDbValue = document.getElementById('mid-db');
     const highDbValue = document.getElementById('high-db');
@@ -70,62 +52,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cassette icon
     const cassetteIcon = document.getElementById('cassette-icon');
     
-    // Side Panel controls
-    const sidePanelToggle = document.getElementById('side-panel-toggle');
-    const sideEffectsPanel = document.getElementById('side-effects-panel');
-    const sidePanelClose = document.getElementById('side-panel-close');
-    
-    // Effect controls
-    const reverbMix = document.getElementById('reverb-mix');
-    const reverbValue = document.getElementById('reverb-value');
-    const reverbDecay = document.getElementById('reverb-decay');
-    const reverbDecayValue = document.getElementById('reverb-decay-value');
-    
-    const delayMix = document.getElementById('delay-mix');
-    const delayValue = document.getElementById('delay-value');
-    const delayTime = document.getElementById('delay-time');
-    const delayTimeValue = document.getElementById('delay-time-value');
-    const delayFeedback = document.getElementById('delay-feedback');
-    const delayFeedbackValue = document.getElementById('delay-feedback-value');
-    
-    const phaserMix = document.getElementById('phaser-mix');
-    const phaserValue = document.getElementById('phaser-value');
-    const phaserFreq = document.getElementById('phaser-freq');
-    const phaserFreqValue = document.getElementById('phaser-freq-value');
-    const phaserDepth = document.getElementById('phaser-depth');
-    const phaserDepthValue = document.getElementById('phaser-depth-value');
-    
-    const chorusMix = document.getElementById('chorus-mix');
-    const chorusValue = document.getElementById('chorus-value');
-    const chorusFreq = document.getElementById('chorus-freq');
-    const chorusFreqValue = document.getElementById('chorus-freq-value');
-    const chorusDepth = document.getElementById('chorus-depth');
-    const chorusDepthValue = document.getElementById('chorus-depth-value');
-    
-    const stereoWidth = document.getElementById('stereo-width');
-    const stereoWidthValue = document.getElementById('stereo-width-value');
-    
-    // DJ Chop effect controls (may not exist in HTML)
-    const chopCrossfader = document.getElementById('chop-crossfader');
-    const crossfaderValue = document.getElementById('crossfader-value');
-    const chopRateControl = document.getElementById('chop-rate');
-    const chopRateValue = document.getElementById('chop-rate-value');
-    const turntable = document.getElementById('turntable');
-    const turntableArm = document.getElementById('turntable-arm');
-    const turntableStatus = document.getElementById('turntable-status');
-    
     // State
     let isPlaying = false;
     let isRepeatOn = false;
     let isEqBypassed = false;
-    let isSidePanelOpen = false;
-    
-    // DJ Chop effect state
-    let chopIntensity = 0;
-    let chopRate = 8;
-    let chopInterval = null;
-    let chopPhase = 0;
-    let turntableRotation = 0;
     
     // Visualizer state
     let lowEnergy = 0;
@@ -147,10 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const LOW_FREQ_RANGE_FACTOR = 0.05; // ~20-400 Hz range
     const MID_FREQ_RANGE_FACTOR = 0.2;  // ~400-2500 Hz range
     
-    // Chop effect constants
-    const TURNTABLE_ROTATION_LIGHT = 10; // degrees for light chop
-    const TURNTABLE_ROTATION_HEAVY = 20; // degrees for heavy chop
-    
     // Clipping timeout IDs for cleanup
     let lowClippingTimeout = null;
     let midClippingTimeout = null;
@@ -159,11 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize buttons
     if (playButton) playButton.disabled = true;
     if (downloadButton) downloadButton.disabled = true;
-    
-    // Initialize turntable arm transform origin (set once)
-    if (turntableArm) {
-        turntableArm.style.transformOrigin = '100px 100px';
-    }
 
     // Audio engine variables (keeping existing Tone.js setup)
     let player;
@@ -172,119 +93,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let dryGain;
     let lowShelf;
     let limiter;
-    let eqBypassed = false;
     
-    // Knob smoothing parameters (easily tunable)
-    const KNOB_SMOOTHING_CONFIG = {
-        minRampTime: 0.1,        // Minimum ramp time in seconds
-        maxRatePerMs: 0.5,       // Maximum rate of change per millisecond
-        interpolationTime: 0.1   // Interpolation time for value changes
-    };
-    
-    const smoothingTime = KNOB_SMOOTHING_CONFIG.interpolationTime;
-    
-    // Knob smoothing state
-    let speedSmoothing = { lastValue: 100, lastTime: Date.now(), targetValue: 100 };
-    let pitchSmoothing = { lastValue: 0, lastTime: Date.now(), targetValue: 0 };
-    
-    // Logo paths (easily replaceable)
-    const LOGO_PATHS = {
-        corner: {
-            light: 'lightcl.png',
-            dark: 'darkcl.png'
-        },
-        center: {
-            light: 'light.png',
-            dark: 'dark.png'
-        }
-    };
-    
-    // Initialize logo system
-    function updateLogos() {
-        const theme = body.getAttribute('data-theme') || 'light';
-        const cornerPath = LOGO_PATHS.corner[theme];
-        const centerPath = LOGO_PATHS.center[theme];
-        
-        // Set corner logo with fallback
-        if (cornerLogoImg) {
-            cornerLogoImg.src = cornerPath;
-            cornerLogoImg.onerror = () => {
-                // Fallback to SVG icon if PNG not found
-                cornerLogo.innerHTML = `
-                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="4" y="10" width="40" height="28" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/>
-                        <circle cx="14" cy="24" r="5" stroke="currentColor" stroke-width="2" fill="none"/>
-                        <circle cx="34" cy="24" r="5" stroke="currentColor" stroke-width="2" fill="none"/>
-                        <path d="M14 29 Q24 26 34 29" stroke="currentColor" stroke-width="2" fill="none"/>
-                        <circle cx="24" cy="8" r="2" fill="var(--accent-color)"/>
-                    </svg>
-                `;
-            };
-        }
-        
-        // Set center logo with fallback
-        if (centerLogoImg) {
-            centerLogoImg.src = centerPath;
-            centerLogoImg.onerror = () => {
-                // Fallback to SVG cassette if PNG not found
-                centerLogo.innerHTML = `
-                    <svg width="140" height="93" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <linearGradient id="cassetteGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" style="stop-color:var(--cassette-color-1);stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:var(--cassette-color-2);stop-opacity:1" />
-                            </linearGradient>
-                        </defs>
-                        <rect x="10" y="15" width="100" height="50" rx="4" fill="url(#cassetteGrad)" opacity="0.9"/>
-                        <rect x="15" y="20" width="90" height="40" rx="3" fill="var(--bg-color)" opacity="0.2"/>
-                        <circle cx="35" cy="40" r="10" stroke="var(--bg-color)" stroke-width="2" fill="none"/>
-                        <circle cx="85" cy="40" r="10" stroke="var(--bg-color)" stroke-width="2" fill="none"/>
-                        <circle cx="35" cy="40" r="5" fill="var(--bg-color)" opacity="0.4"/>
-                        <circle cx="85" cy="40" r="5" fill="var(--bg-color)" opacity="0.4"/>
-                        <path d="M45 40 Q60 35 75 40" stroke="var(--bg-color)" stroke-width="1.5" fill="none" opacity="0.6"/>
-                        <rect x="50" y="25" width="20" height="8" rx="2" fill="var(--bg-color)" opacity="0.3"/>
-                    </svg>
-                `;
-            };
-        }
-        
-        // Set modal logo
-        if (modalLogoImg) {
-            modalLogoImg.src = centerPath;
-        }
-    }
-    
-    updateLogos();
-    let chopGain; // For chop effect volume control
-    
-    // Effect units
-    let reverb;
-    let reverbWet;
-    let delay;
-    let delayWet;
-    let phaser;
-    let phaserWet;
-    let chorus;
-    let chorusWet;
-    let stereoWidener;
-    
-    const smoothingTime = 0.15; // Increased for smoother knob movement and artifact prevention
+    const smoothingTime = 0.05;
 
     // Check if Tone.js is available
     if (typeof Tone === 'undefined') {
         console.warn('Tone.js not loaded. Audio processing will be unavailable.');
         showNotification('Audio library not loaded. Some features may not work.', 'warning');
     } else {
-        // Initialize Tone.js components with pro-quality settings
-        // High-quality pitch shifting with window size optimization
-        pitchShift = new Tone.PitchShift({ 
-            pitch: 0,
-            windowSize: 0.1, // Smaller window for better transient response
-            delayTime: 0, // Minimize latency
-            feedback: 0 // No feedback for cleaner sound
-        });
+        // Initialize Tone.js components
+        pitchShift = new Tone.PitchShift({ pitch: 0 });
         
-        // Enhanced EQ with better frequency separation
         lowShelf = new Tone.EQ3({
             low: 0,
             mid: 0,
@@ -293,94 +112,26 @@ document.addEventListener('DOMContentLoaded', () => {
             highFrequency: 2500
         });
         
-        // Initialize effects with improved quality settings for "chopped and screwed" sound
-        reverb = new Tone.Reverb({
-            decay: 1.5,
-            preDelay: 0.01
-        }).toDestination();
-        reverbWet = new Tone.Gain(0);
+        // Use less aggressive limiter threshold to prevent distortion
+        limiter = new Tone.Limiter(-0.1);
         
-        // Tape-style delay for classic chopped & screwed feel
-        delay = new Tone.FeedbackDelay({
-            delayTime: 0.25,
-            feedback: 0.3,
-            maxDelay: 1
-        }).toDestination();
-        delayWet = new Tone.Gain(0);
-        
-        // Sweeping phaser for movement
-        phaser = new Tone.Phaser({
-            frequency: 0.5,
-            octaves: 3,
-            baseFrequency: 350
-        }).toDestination();
-        phaserWet = new Tone.Gain(0);
-        
-        // Chorus for depth and width
-        chorus = new Tone.Chorus({
-            frequency: 1.5,
-            delayTime: 3.5,
-            depth: 0.7,
-            spread: 180
-        }).toDestination();
-        chorus.start();
-        chorusWet = new Tone.Gain(0);
-        
-        // Stereo widening for spaciousness
-        stereoWidener = new Tone.StereoWidener(0).toDestination();
-        
-        // Professional limiter with gentle threshold to preserve dynamics
-        limiter = new Tone.Limiter(-0.5); // More headroom for better quality
-        
-        // Initialize chop gain for DJ chop effect
-        chopGain = new Tone.Gain(1);
-        
-        // Enhanced audio chain with effects
+        // Audio chain
         pitchShift.connect(lowShelf);
-        lowShelf.connect(chopGain); // Insert chop gain before limiter
-        chopGain.connect(limiter);
+        lowShelf.connect(limiter);
         limiter.toDestination();
-        
-        // Connect effects in parallel
-        limiter.connect(reverbWet);
-        reverbWet.connect(reverb);
-        
-        limiter.connect(delayWet);
-        delayWet.connect(delay);
-        
-        limiter.connect(phaserWet);
-        phaserWet.connect(phaser);
-        
-        limiter.connect(chorusWet);
-        chorusWet.connect(chorus);
-        
-        limiter.connect(stereoWidener);
         
         wetDry = new Tone.Gain(0.5).connect(pitchShift);
         dryGain = new Tone.Gain(0.5).toDestination();
     }
 
-    // Dropdown Menu Toggle
-    settingsBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
-    });
-    
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!settingsBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
-            dropdownMenu.style.display = 'none';
-        }
-    });
-    
-    // Theme Toggle from menu
-    function toggleTheme() {
+    // Theme Toggle
+    themeToggle.addEventListener('click', () => {
         const currentTheme = body.getAttribute('data-theme');
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
         body.setAttribute('data-theme', newTheme);
         
-        // Update menu icon
-        const icon = themeToggleMenu.querySelector('i');
+        // Update icon
+        const icon = themeToggle.querySelector('i');
         if (newTheme === 'dark') {
             icon.classList.remove('fa-moon');
             icon.classList.add('fa-sun');
@@ -389,73 +140,24 @@ document.addEventListener('DOMContentLoaded', () => {
             icon.classList.add('fa-moon');
         }
         
-        // Save preference and update logos
+        // Save preference
         localStorage.setItem('theme', newTheme);
-        updateLogos();
-    }
-    
-    themeToggleMenu.addEventListener('click', () => {
-        toggleTheme();
-        dropdownMenu.style.display = 'none';
     });
     
     // Load saved theme
     const savedTheme = localStorage.getItem('theme') || 'light';
     body.setAttribute('data-theme', savedTheme);
-    const themeIcon = themeToggleMenu.querySelector('i');
+    const icon = themeToggle.querySelector('i');
     if (savedTheme === 'dark') {
-        themeIcon.classList.remove('fa-moon');
-        themeIcon.classList.add('fa-sun');
-    }
-    
-    // About Menu
-    aboutMenu.addEventListener('click', () => {
-        aboutModal.style.display = 'flex';
-        dropdownMenu.style.display = 'none';
-    });
-    
-    aboutClose.addEventListener('click', () => {
-        aboutModal.style.display = 'none';
-    });
-    
-    aboutModal.addEventListener('click', (e) => {
-        if (e.target === aboutModal) {
-            aboutModal.style.display = 'none';
-        }
-    });
-    
-    // Pre-Order Menu (opens marketing modal)
-    preorderMenu.addEventListener('click', () => {
-        marketingModal.style.display = 'flex';
-        dropdownMenu.style.display = 'none';
-    });
-    
-    // Center Logo Click - Opens Marketing Modal
-    if (centerLogo) {
-        centerLogo.addEventListener('click', () => {
-            marketingModal.style.display = 'flex';
-        });
-    }
-    
-    // Marketing Modal
-    marketingClose.addEventListener('click', () => {
-        marketingModal.style.display = 'none';
-    });
-    
-    marketingModal.addEventListener('click', (e) => {
-        if (e.target === marketingModal) {
-            marketingModal.style.display = 'none';
-        }
-    });
-    
-    // Join Beta Button
-    if (joinBetaBtn) {
-        joinBetaBtn.addEventListener('click', () => {
-            showNotification('Beta program coming soon! Stay tuned.', 'info');
-        });
+        icon.classList.remove('fa-moon');
+        icon.classList.add('fa-sun');
     }
 
     // Settings Modal
+    settingsBtn.addEventListener('click', () => {
+        settingsModal.style.display = 'flex';
+    });
+    
     settingsClose.addEventListener('click', () => {
         settingsModal.style.display = 'none';
     });
@@ -466,16 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // EQ Enable Checkbox
-    eqEnableCheckbox.addEventListener('change', () => {
-        if (eqEnableCheckbox.checked) {
-            eqControlsDiv.style.display = 'block';
-            eqBypassBtn.disabled = false;
-        } else {
-            eqControlsDiv.style.display = 'none';
-            eqBypassBtn.disabled = true;
-            eqBypassed = false;
-            eqBypassBtn.classList.remove('bypassed');
     // EQ Modal
     eqBtn.addEventListener('click', () => {
         eqModal.style.display = 'flex';
@@ -552,31 +244,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-    
-    // EQ Bypass Button - Immediately toggles EQ processing
-    eqBypassBtn.addEventListener('click', () => {
-        eqBypassed = !eqBypassed;
-        
-        if (eqBypassed) {
-            eqBypassBtn.classList.add('bypassed');
-            eqBypassBtn.innerHTML = '<i class="fas fa-power-off"></i> Bypassed';
-            
-            // Immediately set EQ to neutral
-            if (lowShelf) {
-                lowShelf.low.value = 0;
-                lowShelf.mid.value = 0;
-                lowShelf.high.value = 0;
-            }
-        } else {
-            eqBypassBtn.classList.remove('bypassed');
-            eqBypassBtn.innerHTML = '<i class="fas fa-power-off"></i> Bypass';
-            
-            // Restore EQ settings
-            updateEQ();
-        }
-        
-        showNotification(eqBypassed ? 'EQ Bypassed' : 'EQ Active', 'info');
-    });
 
     // Knob visualization update
     function updateKnobIndicator(knob, indicator) {
@@ -592,86 +259,20 @@ document.addEventListener('DOMContentLoaded', () => {
         indicator.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
     }
 
-    // Knob smoothing helper function
-    function smoothKnobValue(currentValue, newValue, smoothingState, min, max) {
-        const now = Date.now();
-        const deltaTime = now - smoothingState.lastTime;
-        
-        // Calculate max allowed change based on time elapsed
-        const maxChange = KNOB_SMOOTHING_CONFIG.maxRatePerMs * deltaTime;
-        const valueRange = max - min;
-        const maxDelta = (maxChange / 1000) * valueRange;
-        
-        // Clamp the change
-        let delta = newValue - smoothingState.lastValue;
-        if (Math.abs(delta) > maxDelta) {
-            delta = Math.sign(delta) * maxDelta;
-        }
-        
-        const smoothedValue = smoothingState.lastValue + delta;
-        
-        // Prevent zero/NaN values
-        const safeValue = isNaN(smoothedValue) ? currentValue : smoothedValue;
-        const clampedValue = Math.max(min, Math.min(max, safeValue));
-        
-        smoothingState.lastValue = clampedValue;
-        smoothingState.lastTime = now;
-        smoothingState.targetValue = newValue;
-        
-        return clampedValue;
-    }
-    
-    // Speed Knob with smoothing
+    // Speed Knob
     speedKnob.addEventListener('input', () => {
-        const rawValue = parseFloat(speedKnob.value);
-        const smoothedValue = smoothKnobValue(
-            speedSmoothing.lastValue,
-            rawValue,
-            speedSmoothing,
-            50,
-            200
-        );
-        
-        speedValue.textContent = Math.round(smoothedValue) + '%';
+        const value = speedKnob.value;
+        speedValue.textContent = value + '%';
         updateKnobIndicator(speedKnob, speedIndicator);
-        updateAudioSmoothed();
+        updateAudio();
     });
     
-    // Pitch Knob with smoothing
+    // Pitch Knob
     pitchKnob.addEventListener('input', () => {
-        const rawValue = parseFloat(pitchKnob.value);
-        const smoothedValue = smoothKnobValue(
-            pitchSmoothing.lastValue,
-            rawValue,
-            pitchSmoothing,
-            -12,
-            12
-        );
-        
-        pitchValue.textContent = smoothedValue.toFixed(1) + ' st';
+        const value = parseFloat(pitchKnob.value).toFixed(1);
+        pitchValue.textContent = value + ' st';
         updateKnobIndicator(pitchKnob, pitchIndicator);
-        updateAudioSmoothed();
-    });
-    
-    // Add dragging class for cursor feedback
-    [speedKnob, pitchKnob].forEach(knob => {
-        const wrapper = knob.parentElement;
-        
-        knob.addEventListener('mousedown', () => {
-            wrapper.classList.add('dragging');
-        });
-        
-        knob.addEventListener('touchstart', () => {
-            wrapper.classList.add('dragging');
-        });
-        
-        document.addEventListener('mouseup', () => {
-            wrapper.classList.remove('dragging');
-        });
-        
-        document.addEventListener('touchend', () => {
-            wrapper.classList.remove('dragging');
-        });
+        updateAudio();
     });
 
     // Initialize knob indicators
@@ -706,10 +307,6 @@ document.addEventListener('DOMContentLoaded', () => {
         midDbValue.textContent = midGain.toFixed(1) + ' dB';
         highDbValue.textContent = highGain.toFixed(1) + ' dB';
 
-        if (!lowShelf) return;
-        
-        // Don't update if bypassed
-        if (eqBypassed) return;
         if (!lowShelf || isEqBypassed) return;
 
         if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
@@ -721,133 +318,6 @@ document.addEventListener('DOMContentLoaded', () => {
             lowShelf.mid.value = midGain;
             lowShelf.high.value = highGain;
         }
-    }
-
-    // Audio Update Function with smoothing (prevents clicks/pops)
-    function updateAudioSmoothed() {
-    // Chop Effect Controls (only if elements exist)
-    if (chopCrossfader && crossfaderValue) {
-        chopCrossfader.addEventListener('input', (e) => {
-            chopIntensity = parseFloat(e.target.value);
-            crossfaderValue.textContent = Math.round(chopIntensity) + '%';
-            
-            // Update turntable visual state
-            updateTurntableStatus();
-            
-            // Start or stop chop effect
-            if (chopIntensity > 0 && isPlaying) {
-                startChopEffect();
-            } else {
-                stopChopEffect();
-            }
-        });
-    }
-
-    if (chopRateControl && chopRateValue) {
-        chopRateControl.addEventListener('input', (e) => {
-            const value = parseInt(e.target.value);
-            // Map slider values to musical note divisions - now using a function for distinct mappings
-            function getRateMapping(val) {
-                switch (val) {
-                case 4:  return { rate: 4, label: '1/4' };      // Quarter notes
-                case 5:  return { rate: 6, label: '1/8T' };     // Eighth note triplets
-                case 6:  return { rate: 8, label: '1/8' };      // Eighth notes
-                case 9:  return { rate: 12, label: '1/16T' };   // Sixteenth note triplets
-                case 12: return { rate: 16, label: '1/16' };    // Sixteenth notes
-                default: return { rate: 8, label: '1/8' };      // Default to eighth notes
-            }
-        }
-        
-        const mapping = getRateMapping(value);
-        chopRate = mapping.rate;
-        chopRateValue.textContent = mapping.label;
-        
-        // Restart chop effect with new rate if active
-        if (chopInterval && isPlaying) {
-            startChopEffect();
-        }
-        });
-    }
-
-    function updateTurntableStatus() {
-        if (!turntableStatus) return;
-        
-        if (chopIntensity === 0) {
-            turntableStatus.textContent = 'READY';
-            turntable?.classList.remove('chopping', 'spinning');
-        } else if (chopIntensity < 50) {
-            turntableStatus.textContent = 'LIGHT CHOP';
-            turntable?.classList.remove('spinning');
-            turntable?.classList.add('chopping');
-        } else {
-            turntableStatus.textContent = 'FULL CHOP';
-            turntable?.classList.add('chopping');
-        }
-    }
-
-    function startChopEffect() {
-        if (chopInterval) {
-            clearInterval(chopInterval);
-        }
-        
-        if (chopIntensity === 0 || !isPlaying || !chopGain) return;
-        
-        // Calculate chop interval based on tempo and rate
-        // Assuming 120 BPM base tempo, adjust as needed
-        const bpm = 120;
-        const beatDuration = 60 / bpm; // seconds per beat
-        const chopDuration = (beatDuration * 4) / chopRate; // Duration for each chop cycle
-        
-        chopInterval = setInterval(() => {
-            if (!chopGain || !isPlaying) {
-                stopChopEffect();
-                return;
-            }
-            
-            chopPhase = (chopPhase + 1) % 2;
-            const intensity = chopIntensity / 100;
-            
-            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
-                if (chopPhase === 0) {
-                    // Chop on - reduce volume for the "chop" effect
-                    // Create a more dramatic chop by reducing volume significantly
-                    const targetGain = 1 - (intensity * 0.85);
-                    chopGain.gain.cancelScheduledValues(Tone.context.currentTime);
-                    chopGain.gain.setValueAtTime(chopGain.gain.value, Tone.context.currentTime);
-                    chopGain.gain.linearRampToValueAtTime(targetGain, Tone.context.currentTime + 0.005);
-                } else {
-                    // Chop off - restore volume with quick attack for rhythmic effect
-                    chopGain.gain.cancelScheduledValues(Tone.context.currentTime);
-                    chopGain.gain.setValueAtTime(chopGain.gain.value, Tone.context.currentTime);
-                    chopGain.gain.linearRampToValueAtTime(1, Tone.context.currentTime + 0.005);
-                }
-            }
-            
-            // Update turntable rotation with more dramatic movement
-            const rotationAmount = intensity > 0.5 ? TURNTABLE_ROTATION_HEAVY : TURNTABLE_ROTATION_LIGHT;
-            turntableRotation = (turntableRotation + (chopPhase === 0 ? rotationAmount : -rotationAmount)) % 360;
-            if (turntableArm) {
-                turntableArm.style.transform = `rotate(${turntableRotation}deg)`;
-            }
-        }, (chopDuration * 1000) / 2); // Divide by 2 for on/off cycle
-    }
-
-    function stopChopEffect() {
-        if (chopInterval) {
-            clearInterval(chopInterval);
-            chopInterval = null;
-        }
-        
-        // Reset gain to normal
-        if (chopGain) {
-            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
-                chopGain.gain.linearRampToValueAtTime(1, Tone.context.currentTime + smoothingTime);
-            } else {
-                chopGain.gain.value = 1;
-            }
-        }
-        
-        chopPhase = 0;
     }
 
     // Setup audio analyser for visualizer
@@ -950,30 +420,19 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateAudio() {
         if (!player || !pitchShift) return;
 
-        const playbackRate = speedSmoothing.lastValue / 100;
-        
-        // Prevent zero playback rate
-        const safePlaybackRate = Math.max(0.1, Math.min(4, playbackRate));
-        player.playbackRate = safePlaybackRate;
+        const playbackRate = parseFloat(speedKnob.value) / 100;
+        player.playbackRate = playbackRate;
 
         // Compensate for pitch change from playback rate
-        const timeStretchPitchCorrection = -12 * Math.log2(safePlaybackRate);
-        const userPitchBend = pitchSmoothing.lastValue;
+        const timeStretchPitchCorrection = -12 * Math.log2(playbackRate);
+        const userPitchBend = parseFloat(pitchKnob.value);
         const targetPitch = userPitchBend + timeStretchPitchCorrection;
-        
-        // Prevent NaN values
-        const safePitch = isNaN(targetPitch) ? 0 : targetPitch;
 
         if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
-            pitchShift.pitch.linearRampToValueAtTime(safePitch, Tone.context.currentTime + smoothingTime);
+            pitchShift.pitch.linearRampToValueAtTime(targetPitch, Tone.context.currentTime + smoothingTime);
         } else if (pitchShift) {
-            pitchShift.pitch = safePitch;
+            pitchShift.pitch = targetPitch;
         }
-    }
-    
-    // Legacy update function for compatibility
-    function updateAudio() {
-        updateAudioSmoothed();
     }
 
     // Toolbar: Load Button
@@ -1019,19 +478,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 playPauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
                 if (playButton) playButton.innerHTML = '<i class="fas fa-pause"></i> Pause';
                 checkTransportEnd(); // Start monitoring for repeat
-                
-                // Start chop effect if crossfader is not at 0
-                if (chopIntensity > 0) {
-                    startChopEffect();
-                }
             } else {
                 Tone.Transport.pause();
                 isPlaying = false;
                 playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
                 if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
-                
-                // Stop chop effect when pausing
-                stopChopEffect();
             }
         }
     });
@@ -1046,9 +497,6 @@ document.addEventListener('DOMContentLoaded', () => {
             isPlaying = false;
             playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
             if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
-            
-            // Stop chop effect
-            stopChopEffect();
         }
     });
 
@@ -1090,11 +538,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Add center logo animation
-        if (centerLogo) {
-            centerLogo.style.animation = 'logoSpin 1s ease-in-out';
+        // Add cassette animation
+        if (cassetteIcon) {
+            cassetteIcon.style.animation = 'spin 1s ease-in-out';
             setTimeout(() => {
-                centerLogo.style.animation = '';
+                cassetteIcon.style.animation = '';
             }, 1000);
         }
 
@@ -1163,19 +611,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (Tone.Transport.state !== 'started') {
                     Tone.Transport.start();
                     playButton.innerHTML = '<i class="fas fa-pause"></i> Pause';
-                    isPlaying = true;
-                    
-                    // Start chop effect if crossfader is not at 0
-                    if (chopIntensity > 0) {
-                        startChopEffect();
-                    }
                 } else {
                     Tone.Transport.pause();
                     playButton.innerHTML = '<i class="fas fa-play"></i> Play';
-                    isPlaying = false;
-                    
-                    // Stop chop effect when pausing
-                    stopChopEffect();
                 }
             }
         });
@@ -1192,26 +630,16 @@ document.addEventListener('DOMContentLoaded', () => {
             downloadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
 
             try {
-                const playbackRate = parseFloat(speedKnob.value) / 100;
-                // Adjust rendering duration based on playback rate
-                // Slower playback (rate < 1) produces longer audio, faster playback (rate > 1) produces shorter audio
-                const renderDuration = player.buffer.duration / playbackRate;
-                
                 const buffer = await Tone.Offline(async (offline) => {
                     const offlinePlayer = new Tone.Player(player.buffer);
+                    const playbackRate = parseFloat(speedKnob.value) / 100;
                     offlinePlayer.playbackRate = playbackRate;
 
                     const timeStretchPitchCorrection = -12 * Math.log2(playbackRate);
                     const userPitchBend = parseFloat(pitchKnob.value);
                     const totalPitchShift = userPitchBend + timeStretchPitchCorrection;
 
-                    // High-quality offline processing with same settings as real-time
-                    const offlinePitchShift = new Tone.PitchShift({ 
-                        pitch: totalPitchShift,
-                        windowSize: 0.1,
-                        delayTime: 0,
-                        feedback: 0
-                    });
+                    const offlinePitchShift = new Tone.PitchShift({ pitch: totalPitchShift });
                     const offlineEQ = new Tone.EQ3({
                         low: parseFloat(lowEqKnob.value),
                         mid: parseFloat(midEqKnob.value),
@@ -1219,62 +647,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         lowFrequency: 400,
                         highFrequency: 2500
                     });
-                    // Professional limiter with better headroom
-                    const offlineLimiter = new Tone.Limiter(-0.5);
+                    // Use less aggressive limiter threshold to prevent distortion
+                    const offlineLimiter = new Tone.Limiter(-0.1);
 
-                    // Create offline effects with current settings
-                    const offlineReverb = new Tone.Reverb({
-                        decay: reverb ? reverb.decay : 1.5,
-                        preDelay: 0.01
-                    }).connect(offline.destination);
-                    const offlineReverbWet = new Tone.Gain(reverbWet ? reverbWet.gain.value : 0);
-
-                    const offlineDelay = new Tone.FeedbackDelay({
-                        delayTime: delay ? delay.delayTime.value : 0.25,
-                        feedback: delay ? delay.feedback.value : 0.3,
-                        maxDelay: 1
-                    }).connect(offline.destination);
-                    const offlineDelayWet = new Tone.Gain(delayWet ? delayWet.gain.value : 0);
-
-                    const offlinePhaser = new Tone.Phaser({
-                        frequency: phaser ? phaser.frequency.value : 0.5,
-                        octaves: phaser ? phaser.octaves : 3,
-                        baseFrequency: 350
-                    }).connect(offline.destination);
-                    const offlinePhaserWet = new Tone.Gain(phaserWet ? phaserWet.gain.value : 0);
-
-                    const offlineChorus = new Tone.Chorus({
-                        frequency: chorus ? chorus.frequency.value : 1.5,
-                        delayTime: 3.5,
-                        depth: 0.7, // Use default value as Tone.js Chorus depth property is not directly accessible
-                        spread: 180
-                    }).connect(offline.destination);
-                    offlineChorus.start();
-                    const offlineChorusWet = new Tone.Gain(chorusWet ? chorusWet.gain.value : 0);
-
-                    const offlineStereoWidener = new Tone.StereoWidener(
-                        stereoWidener ? stereoWidener.width.value : 0
-                    ).connect(offline.destination);
-
-                    // Build audio chain
                     offlinePitchShift.connect(offlineEQ);
                     offlineEQ.connect(offlineLimiter);
                     offlineLimiter.connect(offline.destination);
-
-                    // Connect effects in parallel
-                    offlineLimiter.connect(offlineReverbWet);
-                    offlineReverbWet.connect(offlineReverb);
-
-                    offlineLimiter.connect(offlineDelayWet);
-                    offlineDelayWet.connect(offlineDelay);
-
-                    offlineLimiter.connect(offlinePhaserWet);
-                    offlinePhaserWet.connect(offlinePhaser);
-
-                    offlineLimiter.connect(offlineChorusWet);
-                    offlineChorusWet.connect(offlineChorus);
-
-                    offlineLimiter.connect(offlineStereoWidener);
 
                     const offlineWetGain = new Tone.Gain(parseFloat(wetDryMixSlider.value)).connect(offlinePitchShift);
                     const offlineDryGain = new Tone.Gain(1 - parseFloat(wetDryMixSlider.value)).connect(offline.destination);
@@ -1282,7 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     offlinePlayer.connect(offlineDryGain);
                     offlinePlayer.connect(offlineWetGain);
                     offlinePlayer.start(0);
-                }, player.buffer.duration / playbackRate);
+                }, player.buffer.duration);
 
                 // Use MP3 encoding for better quality and smaller file size
                 const ch0 = buffer.getChannelData(0);
@@ -1485,162 +863,5 @@ document.addEventListener('DOMContentLoaded', () => {
             notification.style.animation = 'slideUp 0.3s ease';
             setTimeout(() => notification.remove(), 300);
         }, 3000);
-    }
-
-    // Side Panel Toggle
-    if (sidePanelToggle) {
-        sidePanelToggle.addEventListener('click', () => {
-            isSidePanelOpen = !isSidePanelOpen;
-            sideEffectsPanel.classList.toggle('open', isSidePanelOpen);
-            sidePanelToggle.classList.toggle('active', isSidePanelOpen);
-        });
-    }
-
-    if (sidePanelClose) {
-        sidePanelClose.addEventListener('click', () => {
-            isSidePanelOpen = false;
-            sideEffectsPanel.classList.remove('open');
-            sidePanelToggle.classList.remove('active');
-        });
-    }
-
-    // Effect Controls - Reverb
-    if (reverbMix && reverbWet) {
-        reverbMix.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value) / 100;
-            reverbValue.textContent = Math.round(value * 100) + '%';
-            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
-                reverbWet.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
-            } else if (reverbWet) {
-                reverbWet.gain.value = value;
-            }
-        });
-    }
-
-    if (reverbDecay && reverb) {
-        reverbDecay.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            reverbDecayValue.textContent = value.toFixed(1) + 's';
-            if (reverb) {
-                reverb.decay = value;
-            }
-        });
-    }
-
-    // Effect Controls - Delay
-    if (delayMix && delayWet) {
-        delayMix.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value) / 100;
-            delayValue.textContent = Math.round(value * 100) + '%';
-            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
-                delayWet.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
-            } else if (delayWet) {
-                delayWet.gain.value = value;
-            }
-        });
-    }
-
-    if (delayTime && delay) {
-        delayTime.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            delayTimeValue.textContent = value.toFixed(2) + 's';
-            if (delay) {
-                delay.delayTime.value = value;
-            }
-        });
-    }
-
-    if (delayFeedback && delay) {
-        delayFeedback.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            delayFeedbackValue.textContent = value.toFixed(2);
-            if (delay) {
-                delay.feedback.value = value;
-            }
-        });
-    }
-
-    // Effect Controls - Phaser
-    if (phaserMix && phaserWet) {
-        phaserMix.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value) / 100;
-            phaserValue.textContent = Math.round(value * 100) + '%';
-            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
-                phaserWet.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
-            } else if (phaserWet) {
-                phaserWet.gain.value = value;
-            }
-        });
-    }
-
-    if (phaserFreq && phaser) {
-        phaserFreq.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            phaserFreqValue.textContent = value.toFixed(1) + ' Hz';
-            if (phaser) {
-                phaser.frequency.value = value;
-            }
-        });
-    }
-
-    if (phaserDepth && phaser) {
-        const MAX_PHASER_OCTAVES = 5; // Maximum octaves for phaser depth
-        phaserDepth.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            phaserDepthValue.textContent = value.toFixed(2);
-            // Phaser depth is controlled by octaves in Tone.js
-            if (phaser) {
-                phaser.octaves = value * MAX_PHASER_OCTAVES; // Scale 0-1 to 0-5 octaves
-            }
-        });
-    }
-
-    // Effect Controls - Chorus
-    if (chorusMix && chorusWet) {
-        chorusMix.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value) / 100;
-            chorusValue.textContent = Math.round(value * 100) + '%';
-            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
-                chorusWet.gain.linearRampToValueAtTime(value, Tone.context.currentTime + smoothingTime);
-            } else if (chorusWet) {
-                chorusWet.gain.value = value;
-            }
-        });
-    }
-
-    if (chorusFreq && chorus) {
-        chorusFreq.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            chorusFreqValue.textContent = value.toFixed(1) + ' Hz';
-            if (chorus) {
-                chorus.frequency.value = value;
-            }
-        });
-    }
-
-    if (chorusDepth && chorus) {
-        chorusDepth.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            chorusDepthValue.textContent = value.toFixed(2);
-            if (chorus) {
-                chorus.depth = value;
-            }
-        });
-    }
-
-    // Effect Controls - Stereo Width
-    if (stereoWidth && stereoWidener) {
-        stereoWidth.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value) / 100;
-            stereoWidthValue.textContent = Math.round(value * 100) + '%';
-            // Stereo widener: Map 0-100% slider to -1 to +1 range
-            // 0% = -1 (inverted stereo), 50% = 0 (normal), 100% = +1 (wide)
-            const width = value * 2 - 1;
-            if (typeof Tone !== 'undefined' && Tone.context.state === 'running') {
-                stereoWidener.width.linearRampToValueAtTime(width, Tone.context.currentTime + smoothingTime);
-            } else if (stereoWidener) {
-                stereoWidener.width.value = width;
-            }
-        });
     }
 });
