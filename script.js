@@ -766,7 +766,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const rms = Math.sqrt(sumSquares / sampleCount);
         // Increase target RMS to 0.5 for much louder output (max loud without clipping)
-        // This is approximately -6 dB below peak, leaving headroom for transients
+        // Target RMS of 0.5 is approximately -6 dBFS RMS, leaving headroom for peaks
         const targetRMS = 0.5;
         const gainAdjustment = targetRMS / (rms + MIN_RMS_THRESHOLD);
         // Cap at 4x gain (12 dB) to avoid excessive amplification
