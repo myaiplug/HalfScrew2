@@ -11,13 +11,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const themeToggle = document.getElementById('theme-toggle');
     const body = document.body;
     
-    // Modals
+    // Panels (replacing modals)
     const settingsBtn = document.getElementById('settings-btn');
-    const settingsModal = document.getElementById('settings-modal');
-    const settingsClose = document.getElementById('settings-close');
+    const settingsPanel = document.getElementById('settings-panel');
     const eqBtn = document.getElementById('eq-btn');
-    const eqModal = document.getElementById('eq-modal');
-    const eqClose = document.getElementById('eq-close');
+    const eqPanel = document.getElementById('eq-panel');
     const eqBypassBtn = document.getElementById('eq-bypass-btn');
     
     // Toolbar controls
@@ -154,56 +152,36 @@ document.addEventListener('DOMContentLoaded', () => {
         icon.classList.add('fa-sun');
     }
 
-    // Settings Modal
+    // Settings Panel
     settingsBtn.addEventListener('click', () => {
-        settingsModal.style.display = 'flex';
-    });
-    
-    settingsClose.addEventListener('click', () => {
-        settingsModal.style.display = 'none';
-    });
-    
-    settingsModal.addEventListener('click', (e) => {
-        if (e.target === settingsModal) {
-            settingsModal.style.display = 'none';
+        const isActive = settingsPanel.classList.contains('active');
+        if (isActive) {
+            settingsPanel.classList.remove('active');
+            settingsBtn.classList.remove('active');
+            settingsPanel.style.display = 'none';
+        } else {
+            settingsPanel.style.display = 'block';
+            // Small delay to ensure display change is applied before transition
+            setTimeout(() => {
+                settingsPanel.classList.add('active');
+                settingsBtn.classList.add('active');
+            }, 10);
         }
     });
 
-    // EQ Modal
+    // EQ Panel
     eqBtn.addEventListener('click', () => {
-        eqModal.style.display = 'flex';
-        if (!analyser && player) {
-            setupAnalyser();
-        }
-        if (!animationFrameId) {
-            updateVisualizer();
-        }
-    });
-    
-    eqClose.addEventListener('click', () => {
-        eqModal.style.display = 'none';
-        // Clean up clipping timeouts when modal closes
-        if (lowClippingTimeout) {
-            clearTimeout(lowClippingTimeout);
-            lowClippingTimeout = null;
-            isLowClipping = false;
-        }
-        if (midClippingTimeout) {
-            clearTimeout(midClippingTimeout);
-            midClippingTimeout = null;
-            isMidClipping = false;
-        }
-        if (highClippingTimeout) {
-            clearTimeout(highClippingTimeout);
-            highClippingTimeout = null;
-            isHighClipping = false;
-        }
-    });
-    
-    eqModal.addEventListener('click', (e) => {
-        if (e.target === eqModal) {
-            eqModal.style.display = 'none';
-            // Clean up clipping timeouts when modal closes
+        const isActive = eqPanel.classList.contains('active');
+        if (isActive) {
+            eqPanel.classList.remove('active');
+            eqBtn.classList.remove('active');
+            // Wait for slide animation before hiding
+            setTimeout(() => {
+                if (!eqPanel.classList.contains('active')) {
+                    eqPanel.style.display = 'none';
+                }
+            }, 400);
+            // Clean up clipping timeouts when panel closes
             if (lowClippingTimeout) {
                 clearTimeout(lowClippingTimeout);
                 lowClippingTimeout = null;
@@ -218,6 +196,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearTimeout(highClippingTimeout);
                 highClippingTimeout = null;
                 isHighClipping = false;
+            }
+        } else {
+            eqPanel.style.display = 'block';
+            // Small delay to ensure display change is applied before transition
+            setTimeout(() => {
+                eqPanel.classList.add('active');
+                eqBtn.classList.add('active');
+            }, 10);
+            if (!analyser && player) {
+                setupAnalyser();
+            }
+            if (!animationFrameId) {
+                updateVisualizer();
             }
         }
     });
@@ -295,9 +286,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // EQ Controls
-    lowEqKnob.addEventListener('input', updateEQ);
-    midEqKnob.addEventListener('input', updateEQ);
-    highEqKnob.addEventListener('input', updateEQ);
+    const lowEqIndicator = lowEqKnob?.parentElement.querySelector('.knob-indicator');
+    const midEqIndicator = midEqKnob?.parentElement.querySelector('.knob-indicator');
+    const highEqIndicator = highEqKnob?.parentElement.querySelector('.knob-indicator');
+    
+    lowEqKnob.addEventListener('input', () => {
+        updateEQ();
+        updateKnobIndicator(lowEqKnob, lowEqIndicator);
+    });
+    midEqKnob.addEventListener('input', () => {
+        updateEQ();
+        updateKnobIndicator(midEqKnob, midEqIndicator);
+    });
+    highEqKnob.addEventListener('input', () => {
+        updateEQ();
+        updateKnobIndicator(highEqKnob, highEqIndicator);
+    });
 
     function updateEQ() {
         const lowGain = parseFloat(lowEqKnob.value);
@@ -320,6 +324,11 @@ document.addEventListener('DOMContentLoaded', () => {
             lowShelf.high.value = highGain;
         }
     }
+    
+    // Initialize EQ knob indicators
+    updateKnobIndicator(lowEqKnob, lowEqIndicator);
+    updateKnobIndicator(midEqKnob, midEqIndicator);
+    updateKnobIndicator(highEqKnob, highEqIndicator);
 
     // Setup audio analyser for visualizer
     function setupAnalyser() {
@@ -331,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update visualizer with smooth lerp
     function updateVisualizer() {
-        if (!analyser || eqModal.style.display === 'none') {
+        if (!analyser || !eqPanel.classList.contains('active')) {
             animationFrameId = null;
             return;
         }

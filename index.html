@@ -40,14 +40,14 @@
         </svg>
     </div>
 
-    <!-- EQ button (top left, next to logo) -->
+    <!-- EQ button (bottom left) -->
     <button class="eq-btn" id="eq-btn" aria-label="EQ Controls">
         <i class="fas fa-sliders-h"></i>
     </button>
 
     <!-- Top right settings button -->
     <button class="settings-btn" id="settings-btn" aria-label="Settings">
-        <i class="fas fa-cog"></i>
+        <i class="fas fa-chevron-left"></i>
     </button>
 
     <!-- Theme toggle button (bottom right) -->
@@ -160,10 +160,9 @@
     <!-- Hidden audio player for Tone.js -->
     <audio id="audio-player" style="display: none;"></audio>
 
-    <!-- EQ Modal -->
-    <div id="eq-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content eq-modal-content">
-            <button class="modal-close" id="eq-close">&times;</button>
+    <!-- EQ Panel (slide-out from left) -->
+    <div id="eq-panel" class="side-panel left-panel" style="display: none;">
+        <div class="panel-content eq-panel-content">
             <h2>EQ & Visualizer</h2>
             <div class="eq-content">
                 <div class="eq-band">
@@ -171,7 +170,12 @@
                         <span class="db-value" id="low-db">0 dB</span>
                         <div class="visualizer-bar" id="low-visualizer"></div>
                     </div>
-                    <input type="range" id="low-eq" class="vertical-slider" min="-12" max="12" value="0" step="0.5">
+                    <div class="knob-container eq-knob-container">
+                        <div class="knob-wrapper eq-knob-wrapper">
+                            <input type="range" id="low-eq" class="input-knob eq-knob" min="-12" max="12" value="0" step="0.5" data-diameter="60">
+                            <div class="knob-indicator"></div>
+                        </div>
+                    </div>
                     <label for="low-eq">Low</label>
                 </div>
                 <div class="eq-band">
@@ -179,7 +183,12 @@
                         <span class="db-value" id="mid-db">0 dB</span>
                         <div class="visualizer-bar" id="mid-visualizer"></div>
                     </div>
-                    <input type="range" id="mid-eq" class="vertical-slider" min="-12" max="12" value="0" step="0.5">
+                    <div class="knob-container eq-knob-container">
+                        <div class="knob-wrapper eq-knob-wrapper">
+                            <input type="range" id="mid-eq" class="input-knob eq-knob" min="-12" max="12" value="0" step="0.5" data-diameter="60">
+                            <div class="knob-indicator"></div>
+                        </div>
+                    </div>
                     <label for="mid-eq">Mid</label>
                 </div>
                 <div class="eq-band">
@@ -187,7 +196,12 @@
                         <span class="db-value" id="high-db">0 dB</span>
                         <div class="visualizer-bar" id="high-visualizer"></div>
                     </div>
-                    <input type="range" id="high-eq" class="vertical-slider" min="-12" max="12" value="0" step="0.5">
+                    <div class="knob-container eq-knob-container">
+                        <div class="knob-wrapper eq-knob-wrapper">
+                            <input type="range" id="high-eq" class="input-knob eq-knob" min="-12" max="12" value="0" step="0.5" data-diameter="60">
+                            <div class="knob-indicator"></div>
+                        </div>
+                    </div>
                     <label for="high-eq">High</label>
                 </div>
             </div>
@@ -197,10 +211,9 @@
         </div>
     </div>
 
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <button class="modal-close" id="settings-close">&times;</button>
+    <!-- Settings Panel (slide-out from right) -->
+    <div id="settings-panel" class="side-panel right-panel" style="display: none;">
+        <div class="panel-content">
             <h2>Settings</h2>
             <div class="settings-content">
                 <div class="setting-group">
