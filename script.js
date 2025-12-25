@@ -450,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     Tone.Transport.stop();
                     isPlaying = false;
-                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                     if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
                 }
             }
@@ -475,13 +475,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (Tone.Transport.state !== 'started') {
                 Tone.Transport.start();
                 isPlaying = true;
-                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
                 if (playButton) playButton.innerHTML = '<i class="fas fa-pause"></i> Pause';
                 checkTransportEnd(); // Start monitoring for repeat
             } else {
                 Tone.Transport.pause();
                 isPlaying = false;
-                playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                 if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
             }
         }
@@ -495,7 +495,7 @@ document.addEventListener('DOMContentLoaded', () => {
             Tone.Transport.stop();
             Tone.Transport.position = 0;
             isPlaying = false;
-            playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
             if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
         }
     });
@@ -626,10 +626,17 @@ document.addEventListener('DOMContentLoaded', () => {
         downloadButton.addEventListener('click', async () => {
             if (!player || !player.loaded) return;
 
+            // Immediate feedback
             downloadButton.disabled = true;
+            toolbarDownloadBtn.disabled = true;
             downloadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
+            // Show processing notification immediately
+            showNotification('Processing audio...', 'info');
 
             try {
+                // Step 1: Render audio
+                const startTime = performance.now();
                 const buffer = await Tone.Offline(async (offline) => {
                     const offlinePlayer = new Tone.Player(player.buffer);
                     const playbackRate = parseFloat(speedKnob.value) / 100;
@@ -661,14 +668,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     offlinePlayer.connect(offlineWetGain);
                     offlinePlayer.start(0);
                 }, player.buffer.duration);
-
-                // Use MP3 encoding for better quality and smaller file size
+                
+                // Step 2: Encode to MP3
+                downloadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Encoding...';
+                showNotification('Encoding MP3...', 'info');
+                
+                // Use setTimeout to allow UI to update
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
                 const ch0 = buffer.getChannelData(0);
                 const ch1 = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : ch0;
                 const mp3 = bufferToMp3(ch0, ch1, buffer.sampleRate);
                 processedAudioBlob = new Blob([mp3], { type: 'audio/mpeg' });
                 
-                // Direct download
+                const processingTime = ((performance.now() - startTime) / 1000).toFixed(1);
+                
+                // Step 3: Trigger download immediately
                 const url = URL.createObjectURL(processedAudioBlob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -676,14 +691,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-                URL.revokeObjectURL(url);
                 
-                showNotification('Download started!', 'success');
+                // Delay URL revocation to ensure download starts
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                
+                showNotification(`Download ready! (Processed in ${processingTime}s)`, 'success');
             } catch (error) {
                 console.error("Error processing audio:", error);
                 showNotification('Error processing audio', 'error');
             } finally {
                 downloadButton.disabled = false;
+                toolbarDownloadBtn.disabled = false;
                 downloadButton.innerHTML = '<i class="fas fa-download"></i> Download';
             }
         });
