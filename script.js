@@ -158,7 +158,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isActive) {
             settingsPanel.classList.remove('active');
             settingsBtn.classList.remove('active');
-            settingsPanel.style.display = 'none';
+            // Wait for slide animation before hiding
+            setTimeout(() => {
+                if (!settingsPanel.classList.contains('active')) {
+                    settingsPanel.style.display = 'none';
+                }
+            }, 400);
         } else {
             settingsPanel.style.display = 'block';
             // Small delay to ensure display change is applied before transition
@@ -286,22 +291,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // EQ Controls
-    const lowEqIndicator = lowEqKnob?.parentElement.querySelector('.knob-indicator');
-    const midEqIndicator = midEqKnob?.parentElement.querySelector('.knob-indicator');
-    const highEqIndicator = highEqKnob?.parentElement.querySelector('.knob-indicator');
+    const lowEqIndicator = lowEqKnob?.closest('.eq-knob-wrapper')?.querySelector('.knob-indicator');
+    const midEqIndicator = midEqKnob?.closest('.eq-knob-wrapper')?.querySelector('.knob-indicator');
+    const highEqIndicator = highEqKnob?.closest('.eq-knob-wrapper')?.querySelector('.knob-indicator');
     
-    lowEqKnob.addEventListener('input', () => {
-        updateEQ();
-        updateKnobIndicator(lowEqKnob, lowEqIndicator);
-    });
-    midEqKnob.addEventListener('input', () => {
-        updateEQ();
-        updateKnobIndicator(midEqKnob, midEqIndicator);
-    });
-    highEqKnob.addEventListener('input', () => {
-        updateEQ();
-        updateKnobIndicator(highEqKnob, highEqIndicator);
-    });
+    if (lowEqKnob) {
+        lowEqKnob.addEventListener('input', () => {
+            updateEQ();
+            updateKnobIndicator(lowEqKnob, lowEqIndicator);
+        });
+    }
+    
+    if (midEqKnob) {
+        midEqKnob.addEventListener('input', () => {
+            updateEQ();
+            updateKnobIndicator(midEqKnob, midEqIndicator);
+        });
+    }
+    
+    if (highEqKnob) {
+        highEqKnob.addEventListener('input', () => {
+            updateEQ();
+            updateKnobIndicator(highEqKnob, highEqIndicator);
+        });
+    }
 
     function updateEQ() {
         const lowGain = parseFloat(lowEqKnob.value);
