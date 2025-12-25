@@ -11,13 +11,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const themeToggle = document.getElementById('theme-toggle');
     const body = document.body;
     
-    // Modals
+    // Panels (replacing modals)
     const settingsBtn = document.getElementById('settings-btn');
-    const settingsModal = document.getElementById('settings-modal');
-    const settingsClose = document.getElementById('settings-close');
+    const settingsPanel = document.getElementById('settings-panel');
     const eqBtn = document.getElementById('eq-btn');
-    const eqModal = document.getElementById('eq-modal');
-    const eqClose = document.getElementById('eq-close');
+    const eqPanel = document.getElementById('eq-panel');
     const eqBypassBtn = document.getElementById('eq-bypass-btn');
     
     // Toolbar controls
@@ -76,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const CLIPPING_FLASH_DURATION = 500;
     const LOW_FREQ_RANGE_FACTOR = 0.05; // ~20-400 Hz range
     const MID_FREQ_RANGE_FACTOR = 0.2;  // ~400-2500 Hz range
+    const UI_UPDATE_DELAY = 100; // Delay for UI updates during processing (ms)
     
     // Clipping timeout IDs for cleanup
     let lowClippingTimeout = null;
@@ -153,56 +152,41 @@ document.addEventListener('DOMContentLoaded', () => {
         icon.classList.add('fa-sun');
     }
 
-    // Settings Modal
+    // Settings Panel
     settingsBtn.addEventListener('click', () => {
-        settingsModal.style.display = 'flex';
-    });
-    
-    settingsClose.addEventListener('click', () => {
-        settingsModal.style.display = 'none';
-    });
-    
-    settingsModal.addEventListener('click', (e) => {
-        if (e.target === settingsModal) {
-            settingsModal.style.display = 'none';
+        const isActive = settingsPanel.classList.contains('active');
+        if (isActive) {
+            settingsPanel.classList.remove('active');
+            settingsBtn.classList.remove('active');
+            // Wait for slide animation before hiding
+            setTimeout(() => {
+                if (!settingsPanel.classList.contains('active')) {
+                    settingsPanel.style.display = 'none';
+                }
+            }, 400);
+        } else {
+            settingsPanel.style.display = 'block';
+            // Small delay to ensure display change is applied before transition
+            setTimeout(() => {
+                settingsPanel.classList.add('active');
+                settingsBtn.classList.add('active');
+            }, 10);
         }
     });
 
-    // EQ Modal
+    // EQ Panel
     eqBtn.addEventListener('click', () => {
-        eqModal.style.display = 'flex';
-        if (!analyser && player) {
-            setupAnalyser();
-        }
-        if (!animationFrameId) {
-            updateVisualizer();
-        }
-    });
-    
-    eqClose.addEventListener('click', () => {
-        eqModal.style.display = 'none';
-        // Clean up clipping timeouts when modal closes
-        if (lowClippingTimeout) {
-            clearTimeout(lowClippingTimeout);
-            lowClippingTimeout = null;
-            isLowClipping = false;
-        }
-        if (midClippingTimeout) {
-            clearTimeout(midClippingTimeout);
-            midClippingTimeout = null;
-            isMidClipping = false;
-        }
-        if (highClippingTimeout) {
-            clearTimeout(highClippingTimeout);
-            highClippingTimeout = null;
-            isHighClipping = false;
-        }
-    });
-    
-    eqModal.addEventListener('click', (e) => {
-        if (e.target === eqModal) {
-            eqModal.style.display = 'none';
-            // Clean up clipping timeouts when modal closes
+        const isActive = eqPanel.classList.contains('active');
+        if (isActive) {
+            eqPanel.classList.remove('active');
+            eqBtn.classList.remove('active');
+            // Wait for slide animation before hiding
+            setTimeout(() => {
+                if (!eqPanel.classList.contains('active')) {
+                    eqPanel.style.display = 'none';
+                }
+            }, 400);
+            // Clean up clipping timeouts when panel closes
             if (lowClippingTimeout) {
                 clearTimeout(lowClippingTimeout);
                 lowClippingTimeout = null;
@@ -217,6 +201,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearTimeout(highClippingTimeout);
                 highClippingTimeout = null;
                 isHighClipping = false;
+            }
+        } else {
+            eqPanel.style.display = 'block';
+            // Small delay to ensure display change is applied before transition
+            setTimeout(() => {
+                eqPanel.classList.add('active');
+                eqBtn.classList.add('active');
+            }, 10);
+            if (!analyser && player) {
+                setupAnalyser();
+            }
+            if (!animationFrameId) {
+                updateVisualizer();
             }
         }
     });
@@ -294,9 +291,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // EQ Controls
-    lowEqKnob.addEventListener('input', updateEQ);
-    midEqKnob.addEventListener('input', updateEQ);
-    highEqKnob.addEventListener('input', updateEQ);
+    const lowEqIndicator = lowEqKnob?.closest('.eq-knob-wrapper')?.querySelector('.knob-indicator');
+    const midEqIndicator = midEqKnob?.closest('.eq-knob-wrapper')?.querySelector('.knob-indicator');
+    const highEqIndicator = highEqKnob?.closest('.eq-knob-wrapper')?.querySelector('.knob-indicator');
+    
+    if (lowEqKnob) {
+        lowEqKnob.addEventListener('input', () => {
+            updateEQ();
+            updateKnobIndicator(lowEqKnob, lowEqIndicator);
+        });
+    }
+    
+    if (midEqKnob) {
+        midEqKnob.addEventListener('input', () => {
+            updateEQ();
+            updateKnobIndicator(midEqKnob, midEqIndicator);
+        });
+    }
+    
+    if (highEqKnob) {
+        highEqKnob.addEventListener('input', () => {
+            updateEQ();
+            updateKnobIndicator(highEqKnob, highEqIndicator);
+        });
+    }
 
     function updateEQ() {
         const lowGain = parseFloat(lowEqKnob.value);
@@ -319,6 +337,11 @@ document.addEventListener('DOMContentLoaded', () => {
             lowShelf.high.value = highGain;
         }
     }
+    
+    // Initialize EQ knob indicators
+    updateKnobIndicator(lowEqKnob, lowEqIndicator);
+    updateKnobIndicator(midEqKnob, midEqIndicator);
+    updateKnobIndicator(highEqKnob, highEqIndicator);
 
     // Setup audio analyser for visualizer
     function setupAnalyser() {
@@ -330,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update visualizer with smooth lerp
     function updateVisualizer() {
-        if (!analyser || eqModal.style.display === 'none') {
+        if (!analyser || !eqPanel.classList.contains('active')) {
             animationFrameId = null;
             return;
         }
@@ -450,7 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     Tone.Transport.stop();
                     isPlaying = false;
-                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                     if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
                 }
             }
@@ -475,13 +498,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (Tone.Transport.state !== 'started') {
                 Tone.Transport.start();
                 isPlaying = true;
-                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
                 if (playButton) playButton.innerHTML = '<i class="fas fa-pause"></i> Pause';
                 checkTransportEnd(); // Start monitoring for repeat
             } else {
                 Tone.Transport.pause();
                 isPlaying = false;
-                playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                 if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
             }
         }
@@ -495,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
             Tone.Transport.stop();
             Tone.Transport.position = 0;
             isPlaying = false;
-            playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
             if (playButton) playButton.innerHTML = '<i class="fas fa-play"></i> Play';
         }
     });
@@ -626,10 +649,17 @@ document.addEventListener('DOMContentLoaded', () => {
         downloadButton.addEventListener('click', async () => {
             if (!player || !player.loaded) return;
 
+            // Immediate feedback
             downloadButton.disabled = true;
+            toolbarDownloadBtn.disabled = true;
             downloadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
+            // Show processing notification immediately
+            showNotification('Processing audio...', 'info');
 
             try {
+                // Step 1: Render audio
+                const startTime = performance.now();
                 const buffer = await Tone.Offline(async (offline) => {
                     const offlinePlayer = new Tone.Player(player.buffer);
                     const playbackRate = parseFloat(speedKnob.value) / 100;
@@ -661,14 +691,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     offlinePlayer.connect(offlineWetGain);
                     offlinePlayer.start(0);
                 }, player.buffer.duration);
-
-                // Use MP3 encoding for better quality and smaller file size
+                
+                // Step 2: Encode to MP3
+                downloadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Encoding...';
+                showNotification('Encoding MP3...', 'info');
+                
+                // Use setTimeout to allow UI to update
+                await new Promise(resolve => setTimeout(resolve, UI_UPDATE_DELAY));
+                
                 const ch0 = buffer.getChannelData(0);
                 const ch1 = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : ch0;
                 const mp3 = bufferToMp3(ch0, ch1, buffer.sampleRate);
                 processedAudioBlob = new Blob([mp3], { type: 'audio/mpeg' });
                 
-                // Direct download
+                const processingTime = ((performance.now() - startTime) / 1000).toFixed(1);
+                
+                // Step 3: Trigger download immediately
                 const url = URL.createObjectURL(processedAudioBlob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -676,14 +714,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-                URL.revokeObjectURL(url);
                 
-                showNotification('Download started!', 'success');
+                // Delay URL revocation to ensure download starts
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                
+                showNotification(`Download ready! (Processed in ${processingTime}s)`, 'success');
             } catch (error) {
                 console.error("Error processing audio:", error);
                 showNotification('Error processing audio', 'error');
             } finally {
                 downloadButton.disabled = false;
+                toolbarDownloadBtn.disabled = false;
                 downloadButton.innerHTML = '<i class="fas fa-download"></i> Download';
             }
         });
@@ -724,9 +765,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const rms = Math.sqrt(sumSquares / sampleCount);
-        const targetRMS = 0.1;
+        // Increase target RMS to 0.5 for much louder output (max loud without clipping)
+        // Target RMS of 0.5 is approximately -6 dBFS RMS, leaving headroom for peaks
+        const targetRMS = 0.5;
         const gainAdjustment = targetRMS / (rms + MIN_RMS_THRESHOLD);
-        player.volume.value = 20 * Math.log10(Math.min(gainAdjustment, 2));
+        // Cap at 4x gain (12 dB) to avoid excessive amplification
+        player.volume.value = 20 * Math.log10(Math.min(gainAdjustment, 4));
     }
 
     lufsNormalizeCheckbox.addEventListener('change', () => {
