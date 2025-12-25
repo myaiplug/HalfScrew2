@@ -76,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const CLIPPING_FLASH_DURATION = 500;
     const LOW_FREQ_RANGE_FACTOR = 0.05; // ~20-400 Hz range
     const MID_FREQ_RANGE_FACTOR = 0.2;  // ~400-2500 Hz range
+    const UI_UPDATE_DELAY = 100; // Delay for UI updates during processing (ms)
     
     // Clipping timeout IDs for cleanup
     let lowClippingTimeout = null;
@@ -674,7 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showNotification('Encoding MP3...', 'info');
                 
                 // Use setTimeout to allow UI to update
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, UI_UPDATE_DELAY));
                 
                 const ch0 = buffer.getChannelData(0);
                 const ch1 = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : ch0;
