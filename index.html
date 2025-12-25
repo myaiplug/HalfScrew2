@@ -205,6 +205,11 @@
                     <label for="high-eq">High</label>
                 </div>
             </div>
+            <div class="eq-wet-dry-section">
+                <label for="wet-dry-mix">Wet/Dry Mix</label>
+                <input type="range" id="wet-dry-mix" min="0" max="1" value="0.5" step="0.01">
+                <span id="wet-dry-value">50%</span>
+            </div>
             <button class="bypass-btn" id="eq-bypass-btn">
                 <span class="bypass-text">Bypass</span>
             </button>
@@ -216,11 +221,6 @@
         <div class="panel-content">
             <h2>Settings</h2>
             <div class="settings-content">
-                <div class="setting-group">
-                    <label for="wet-dry-mix">Wet/Dry Mix</label>
-                    <input type="range" id="wet-dry-mix" min="0" max="1" value="0.5" step="0.01">
-                    <span id="wet-dry-value">50%</span>
-                </div>
                 <div class="setting-group">
                     <label>
                         <input type="checkbox" id="lufs-normalize">

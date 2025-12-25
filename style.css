@@ -773,6 +773,60 @@ body::before {
     letter-spacing: 1px;
 }
 
+/* EQ Wet/Dry Section */
+.eq-wet-dry-section {
+    margin-top: 20px;
+    padding: 15px;
+    background: var(--bg-color);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.eq-wet-dry-section label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.eq-wet-dry-section input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--marker-color);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.eq-wet-dry-section input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.eq-wet-dry-section input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.eq-wet-dry-section span {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent-color);
+    text-align: center;
+}
+
 .bypass-btn {
     width: 100%;
     padding: 14px;

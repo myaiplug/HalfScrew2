@@ -765,9 +765,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const rms = Math.sqrt(sumSquares / sampleCount);
-        const targetRMS = 0.1;
+        // Increase target RMS to 0.5 for much louder output (max loud without clipping)
+        // This is approximately -6 dB below peak, leaving headroom for transients
+        const targetRMS = 0.5;
         const gainAdjustment = targetRMS / (rms + MIN_RMS_THRESHOLD);
-        player.volume.value = 20 * Math.log10(Math.min(gainAdjustment, 2));
+        // Cap at 4x gain (12 dB) to avoid excessive amplification
+        player.volume.value = 20 * Math.log10(Math.min(gainAdjustment, 4));
     }
 
     lufsNormalizeCheckbox.addEventListener('change', () => {
