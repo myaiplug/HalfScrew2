@@ -57,12 +57,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // FX controls
     const reverbMixKnob = document.getElementById('reverb-mix');
     const reverbValue = document.getElementById('reverb-value');
+    const reverbSlider = document.getElementById('reverb-slider');
+    const reverbLed = document.getElementById('reverb-led');
     const delayMixKnob = document.getElementById('delay-mix');
     const delayValue = document.getElementById('delay-value');
+    const delaySlider = document.getElementById('delay-slider');
+    const delayLed = document.getElementById('delay-led');
     const chorusMixKnob = document.getElementById('chorus-mix');
     const chorusValue = document.getElementById('chorus-value');
+    const chorusSlider = document.getElementById('chorus-slider');
+    const chorusLed = document.getElementById('chorus-led');
     const distortionMixKnob = document.getElementById('distortion-mix');
     const distortionValue = document.getElementById('distortion-value');
+    const distortionSlider = document.getElementById('distortion-slider');
+    const distortionLed = document.getElementById('distortion-led');
+    
+    // Mixer controls
+    const fxDryWetSlider = document.getElementById('fx-dry-wet');
+    const fxDryWetValue = document.getElementById('fx-dry-wet-value');
+    const masterDbSlider = document.getElementById('master-db');
+    const masterDbValue = document.getElementById('master-db-value');
     
     // Cassette icon
     const cassetteIcon = document.getElementById('cassette-icon');
@@ -71,6 +85,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let isPlaying = false;
     let isRepeatOn = false;
     let isEqBypassed = false;
+    
+    // FX LED states
+    let isReverbActive = false;
+    let isDelayActive = false;
+    let isChorusActive = false;
+    let isDistortionActive = false;
     
     // Visualizer state
     let lowEnergy = 0;
@@ -446,47 +466,151 @@ document.addEventListener('DOMContentLoaded', () => {
     const chorusIndicator = chorusMixKnob?.closest('.fx-knob-wrapper')?.querySelector('.knob-indicator');
     const distortionIndicator = distortionMixKnob?.closest('.fx-knob-wrapper')?.querySelector('.knob-indicator');
 
+    // Helper function to update FX based on LED state
+    function updateFxEffect(effect, value, isActive) {
+        if (effect && isActive) {
+            effect.wet.value = value / 100;
+        } else if (effect) {
+            effect.wet.value = 0;
+        }
+    }
+
+    // Reverb controls
     if (reverbMixKnob) {
         reverbMixKnob.addEventListener('input', () => {
-            const value = parseFloat(reverbMixKnob.value) / 100;
-            reverbValue.textContent = Math.round(value * 100) + '%';
-            if (reverb) {
-                reverb.wet.value = value;
-            }
+            const value = parseFloat(reverbMixKnob.value);
+            reverbValue.textContent = Math.round(value) + '%';
+            if (reverbSlider) reverbSlider.value = value;
+            updateFxEffect(reverb, value, isReverbActive);
             updateKnobIndicator(reverbMixKnob, reverbIndicator);
         });
     }
 
+    if (reverbSlider) {
+        reverbSlider.addEventListener('input', () => {
+            const value = parseFloat(reverbSlider.value);
+            reverbValue.textContent = Math.round(value) + '%';
+            if (reverbMixKnob) reverbMixKnob.value = value;
+            updateFxEffect(reverb, value, isReverbActive);
+            updateKnobIndicator(reverbMixKnob, reverbIndicator);
+        });
+    }
+
+    if (reverbLed) {
+        reverbLed.addEventListener('click', () => {
+            isReverbActive = !isReverbActive;
+            reverbLed.classList.toggle('active', isReverbActive);
+            const value = parseFloat(reverbMixKnob.value);
+            updateFxEffect(reverb, value, isReverbActive);
+        });
+    }
+
+    // Delay controls
     if (delayMixKnob) {
         delayMixKnob.addEventListener('input', () => {
-            const value = parseFloat(delayMixKnob.value) / 100;
-            delayValue.textContent = Math.round(value * 100) + '%';
-            if (delay) {
-                delay.wet.value = value;
-            }
+            const value = parseFloat(delayMixKnob.value);
+            delayValue.textContent = Math.round(value) + '%';
+            if (delaySlider) delaySlider.value = value;
+            updateFxEffect(delay, value, isDelayActive);
             updateKnobIndicator(delayMixKnob, delayIndicator);
         });
     }
 
+    if (delaySlider) {
+        delaySlider.addEventListener('input', () => {
+            const value = parseFloat(delaySlider.value);
+            delayValue.textContent = Math.round(value) + '%';
+            if (delayMixKnob) delayMixKnob.value = value;
+            updateFxEffect(delay, value, isDelayActive);
+            updateKnobIndicator(delayMixKnob, delayIndicator);
+        });
+    }
+
+    if (delayLed) {
+        delayLed.addEventListener('click', () => {
+            isDelayActive = !isDelayActive;
+            delayLed.classList.toggle('active', isDelayActive);
+            const value = parseFloat(delayMixKnob.value);
+            updateFxEffect(delay, value, isDelayActive);
+        });
+    }
+
+    // Chorus controls
     if (chorusMixKnob) {
         chorusMixKnob.addEventListener('input', () => {
-            const value = parseFloat(chorusMixKnob.value) / 100;
-            chorusValue.textContent = Math.round(value * 100) + '%';
-            if (chorus) {
-                chorus.wet.value = value;
-            }
+            const value = parseFloat(chorusMixKnob.value);
+            chorusValue.textContent = Math.round(value) + '%';
+            if (chorusSlider) chorusSlider.value = value;
+            updateFxEffect(chorus, value, isChorusActive);
             updateKnobIndicator(chorusMixKnob, chorusIndicator);
+        });
+    }
+
+    if (chorusSlider) {
+        chorusSlider.addEventListener('input', () => {
+            const value = parseFloat(chorusSlider.value);
+            chorusValue.textContent = Math.round(value) + '%';
+            if (chorusMixKnob) chorusMixKnob.value = value;
+            updateFxEffect(chorus, value, isChorusActive);
+            updateKnobIndicator(chorusMixKnob, chorusIndicator);
+        });
+    }
+
+    if (chorusLed) {
+        chorusLed.addEventListener('click', () => {
+            isChorusActive = !isChorusActive;
+            chorusLed.classList.toggle('active', isChorusActive);
+            const value = parseFloat(chorusMixKnob.value);
+            updateFxEffect(chorus, value, isChorusActive);
         });
     }
 
     if (distortionMixKnob) {
         distortionMixKnob.addEventListener('input', () => {
-            const value = parseFloat(distortionMixKnob.value) / 100;
-            distortionValue.textContent = Math.round(value * 100) + '%';
-            if (distortion) {
-                distortion.wet.value = value;
-            }
+            const value = parseFloat(distortionMixKnob.value);
+            distortionValue.textContent = Math.round(value) + '%';
+            if (distortionSlider) distortionSlider.value = value;
+            updateFxEffect(distortion, value, isDistortionActive);
             updateKnobIndicator(distortionMixKnob, distortionIndicator);
+        });
+    }
+
+    if (distortionSlider) {
+        distortionSlider.addEventListener('input', () => {
+            const value = parseFloat(distortionSlider.value);
+            distortionValue.textContent = Math.round(value) + '%';
+            if (distortionMixKnob) distortionMixKnob.value = value;
+            updateFxEffect(distortion, value, isDistortionActive);
+            updateKnobIndicator(distortionMixKnob, distortionIndicator);
+        });
+    }
+
+    if (distortionLed) {
+        distortionLed.addEventListener('click', () => {
+            isDistortionActive = !isDistortionActive;
+            distortionLed.classList.toggle('active', isDistortionActive);
+            const value = parseFloat(distortionMixKnob.value);
+            updateFxEffect(distortion, value, isDistortionActive);
+        });
+    }
+
+    // Mixer controls
+    if (fxDryWetSlider) {
+        fxDryWetSlider.addEventListener('input', () => {
+            const value = parseFloat(fxDryWetSlider.value);
+            fxDryWetValue.textContent = Math.round(value) + '%';
+            // This would control overall FX dry/wet mix if needed in future
+        });
+    }
+
+    if (masterDbSlider) {
+        masterDbSlider.addEventListener('input', () => {
+            const value = parseFloat(masterDbSlider.value);
+            masterDbValue.textContent = value.toFixed(1) + ' dB';
+            // Apply master volume to limiter or destination
+            if (limiter && typeof Tone !== 'undefined') {
+                Tone.Destination.volume.value = value;
+            }
         });
     }
 
@@ -834,10 +958,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         highFrequency: 2500
                     });
                     
-                    // Creative FX
+                    // Creative FX - only apply if LED is active
                     const offlineReverb = new Tone.Reverb({ 
                         decay: 3, 
-                        wet: parseFloat(reverbMixKnob.value) / 100 
+                        wet: isReverbActive ? (parseFloat(reverbMixKnob.value) / 100) : 0
                     });
                     
                     // Wait for reverb to generate its impulse response
@@ -846,17 +970,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     const offlineDelay = new Tone.FeedbackDelay({ 
                         delayTime: '8n', 
                         feedback: 0.5, 
-                        wet: parseFloat(delayMixKnob.value) / 100 
+                        wet: isDelayActive ? (parseFloat(delayMixKnob.value) / 100) : 0
                     });
                     const offlineChorus = new Tone.Chorus({ 
                         frequency: 1.5, 
                         delayTime: 3.5, 
                         depth: 0.7, 
-                        wet: parseFloat(chorusMixKnob.value) / 100 
+                        wet: isChorusActive ? (parseFloat(chorusMixKnob.value) / 100) : 0
                     });
                     const offlineDistortion = new Tone.Distortion({ 
                         distortion: 0.4, 
-                        wet: parseFloat(distortionMixKnob.value) / 100 
+                        wet: isDistortionActive ? (parseFloat(distortionMixKnob.value) / 100) : 0
                     });
                     
                     // Use less aggressive limiter threshold to prevent distortion

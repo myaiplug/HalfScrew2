@@ -61,9 +61,9 @@
         </svg>
     </button>
 
-    <!-- Top right settings button -->
-    <button class="settings-btn" id="settings-btn" aria-label="Settings">
-        <i class="fas fa-chevron-left"></i>
+    <!-- Top right settings button (Audio Mixer) -->
+    <button class="settings-btn" id="settings-btn" aria-label="Audio Mixer">
+        <i class="fas fa-sliders-h"></i>
     </button>
 
     <!-- Theme toggle button (bottom right) -->
@@ -185,10 +185,6 @@
             <h2>EQ & Visualizer</h2>
             <div class="eq-content">
                 <div class="eq-band">
-                    <div class="eq-meter">
-                        <span class="db-value" id="low-db">0 dB</span>
-                        <div class="visualizer-bar" id="low-visualizer"></div>
-                    </div>
                     <div class="knob-container eq-knob-container">
                         <div class="knob-wrapper eq-knob-wrapper">
                             <input type="range" id="low-eq" class="input-knob eq-knob" min="-12" max="12" value="0" step="0.5" data-diameter="60">
@@ -196,12 +192,9 @@
                         </div>
                     </div>
                     <label for="low-eq">Low</label>
+                    <span class="db-value" id="low-db">0 dB</span>
                 </div>
                 <div class="eq-band">
-                    <div class="eq-meter">
-                        <span class="db-value" id="mid-db">0 dB</span>
-                        <div class="visualizer-bar" id="mid-visualizer"></div>
-                    </div>
                     <div class="knob-container eq-knob-container">
                         <div class="knob-wrapper eq-knob-wrapper">
                             <input type="range" id="mid-eq" class="input-knob eq-knob" min="-12" max="12" value="0" step="0.5" data-diameter="60">
@@ -209,12 +202,9 @@
                         </div>
                     </div>
                     <label for="mid-eq">Mid</label>
+                    <span class="db-value" id="mid-db">0 dB</span>
                 </div>
                 <div class="eq-band">
-                    <div class="eq-meter">
-                        <span class="db-value" id="high-db">0 dB</span>
-                        <div class="visualizer-bar" id="high-visualizer"></div>
-                    </div>
                     <div class="knob-container eq-knob-container">
                         <div class="knob-wrapper eq-knob-wrapper">
                             <input type="range" id="high-eq" class="input-knob eq-knob" min="-12" max="12" value="0" step="0.5" data-diameter="60">
@@ -222,7 +212,14 @@
                         </div>
                     </div>
                     <label for="high-eq">High</label>
+                    <span class="db-value" id="high-db">0 dB</span>
                 </div>
+            </div>
+            <div class="eq-lufs-section">
+                <label>
+                    <input type="checkbox" id="lufs-normalize">
+                    LUFS Normalization
+                </label>
             </div>
             <div class="eq-wet-dry-section">
                 <label for="wet-dry-mix">Wet/Dry Mix</label>
@@ -241,13 +238,17 @@
             <i class="fas fa-chevron-right"></i>
         </button>
         <div class="panel-content">
-            <h2>Settings</h2>
+            <h2>Audio Mixer</h2>
             <div class="settings-content">
-                <div class="setting-group">
-                    <label>
-                        <input type="checkbox" id="lufs-normalize">
-                        LUFS Normalization
-                    </label>
+                <div class="mixer-control">
+                    <label for="fx-dry-wet">Effects Dry/Wet</label>
+                    <input type="range" id="fx-dry-wet" class="vertical-slider" min="0" max="100" value="50" step="1" orient="vertical">
+                    <span id="fx-dry-wet-value">50%</span>
+                </div>
+                <div class="mixer-control">
+                    <label for="master-db">Master dB</label>
+                    <input type="range" id="master-db" class="vertical-slider" min="-20" max="20" value="0" step="0.5" orient="vertical">
+                    <span id="master-db-value">0 dB</span>
                 </div>
                 <div class="modal-buttons">
                     <button id="play-button" disabled>
@@ -273,6 +274,7 @@
                 <!-- Reverb -->
                 <div class="fx-control">
                     <div class="fx-knob-container">
+                        <button class="fx-led" id="reverb-led" aria-label="Toggle Reverb"></button>
                         <div class="knob-wrapper fx-knob-wrapper">
                             <input type="range" id="reverb-mix" class="input-knob fx-knob" min="0" max="100" value="0" step="1" data-diameter="70">
                             <div class="knob-indicator"></div>
@@ -280,11 +282,15 @@
                     </div>
                     <label for="reverb-mix">REVERB</label>
                     <span class="fx-value" id="reverb-value">0%</span>
+                    <div class="fx-mix-slider-container">
+                        <input type="range" id="reverb-slider" class="fx-mix-slider" min="0" max="100" value="0" step="1">
+                    </div>
                 </div>
                 
                 <!-- Delay -->
                 <div class="fx-control">
                     <div class="fx-knob-container">
+                        <button class="fx-led" id="delay-led" aria-label="Toggle Delay"></button>
                         <div class="knob-wrapper fx-knob-wrapper">
                             <input type="range" id="delay-mix" class="input-knob fx-knob" min="0" max="100" value="0" step="1" data-diameter="70">
                             <div class="knob-indicator"></div>
@@ -292,11 +298,15 @@
                     </div>
                     <label for="delay-mix">DELAY</label>
                     <span class="fx-value" id="delay-value">0%</span>
+                    <div class="fx-mix-slider-container">
+                        <input type="range" id="delay-slider" class="fx-mix-slider" min="0" max="100" value="0" step="1">
+                    </div>
                 </div>
                 
                 <!-- Chorus -->
                 <div class="fx-control">
                     <div class="fx-knob-container">
+                        <button class="fx-led" id="chorus-led" aria-label="Toggle Chorus"></button>
                         <div class="knob-wrapper fx-knob-wrapper">
                             <input type="range" id="chorus-mix" class="input-knob fx-knob" min="0" max="100" value="0" step="1" data-diameter="70">
                             <div class="knob-indicator"></div>
@@ -304,11 +314,15 @@
                     </div>
                     <label for="chorus-mix">CHORUS</label>
                     <span class="fx-value" id="chorus-value">0%</span>
+                    <div class="fx-mix-slider-container">
+                        <input type="range" id="chorus-slider" class="fx-mix-slider" min="0" max="100" value="0" step="1">
+                    </div>
                 </div>
                 
                 <!-- Distortion -->
                 <div class="fx-control">
                     <div class="fx-knob-container">
+                        <button class="fx-led" id="distortion-led" aria-label="Toggle Distortion"></button>
                         <div class="knob-wrapper fx-knob-wrapper">
                             <input type="range" id="distortion-mix" class="input-knob fx-knob" min="0" max="100" value="0" step="1" data-diameter="70">
                             <div class="knob-indicator"></div>
@@ -316,6 +330,9 @@
                     </div>
                     <label for="distortion-mix">DISTORTION</label>
                     <span class="fx-value" id="distortion-value">0%</span>
+                    <div class="fx-mix-slider-container">
+                        <input type="range" id="distortion-slider" class="fx-mix-slider" min="0" max="100" value="0" step="1">
+                    </div>
                 </div>
             </div>
         </div>
