@@ -108,13 +108,13 @@ body::before {
 /* EQ button inline (inside main interface at bottom left) */
 .eq-btn-inline {
     position: absolute;
-    bottom: 20px;
-    left: 20px;
+    bottom: 10px;
+    left: 10px;
     background: var(--panel-bg);
     border: none;
     border-radius: 50%;
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -126,7 +126,7 @@ body::before {
         -2px -2px 6px var(--knob-shadow-2);
     transition: all 0.3s ease;
     color: var(--text-color);
-    z-index: 50;
+    z-index: 10;
 }
 
 .eq-btn-inline:hover {
@@ -140,7 +140,7 @@ body::before {
 }
 
 .eq-btn-inline i {
-    font-size: 16px;
+    font-size: 14px;
 }
 
 .eq-btn-inline.active {
@@ -575,7 +575,8 @@ body::before {
     position: fixed;
     top: 0;
     height: 100vh;
-    width: 350px;
+    width: 100%;
+    max-width: 350px;
     background: var(--panel-bg);
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.3);
     z-index: 1;
@@ -585,7 +586,7 @@ body::before {
 
 .left-panel {
     left: 50%;
-    transform: translate(-50%, 0) translateX(-500px);
+    transform: translate(-50%, 0) translateX(-525px);
     border-radius: 0 28px 28px 0;
 }
 

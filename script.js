@@ -163,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         delay = new Tone.FeedbackDelay({ delayTime: '8n', feedback: 0.5, wet: 0 });
         chorus = new Tone.Chorus({ frequency: 1.5, delayTime: 3.5, depth: 0.7, wet: 0 });
+        chorus.start();
         distortion = new Tone.Distortion({ distortion: 0.4, wet: 0 });
         
         // Use less aggressive limiter threshold to prevent distortion
@@ -477,7 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (reverbMixKnob) {
         reverbMixKnob.addEventListener('input', () => {
             const value = parseFloat(reverbMixKnob.value);
-            reverbValue.textContent = Math.round(value) + '%';
+            if (reverbValue) reverbValue.textContent = Math.round(value) + '%';
             if (reverbSlider) reverbSlider.value = value;
             updateFxEffect(reverb, value, isReverbActive);
             updateKnobIndicator(reverbMixKnob, reverbIndicator);
@@ -487,7 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (reverbSlider) {
         reverbSlider.addEventListener('input', () => {
             const value = parseFloat(reverbSlider.value);
-            reverbValue.textContent = Math.round(value) + '%';
+            if (reverbValue) reverbValue.textContent = Math.round(value) + '%';
             if (reverbMixKnob) reverbMixKnob.value = value;
             updateFxEffect(reverb, value, isReverbActive);
             updateKnobIndicator(reverbMixKnob, reverbIndicator);
@@ -498,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reverbLed.addEventListener('click', () => {
             isReverbActive = !isReverbActive;
             reverbLed.classList.toggle('active', isReverbActive);
-            const value = parseFloat(reverbMixKnob.value);
+            const value = parseFloat(reverbMixKnob?.value || 0);
             updateFxEffect(reverb, value, isReverbActive);
         });
     }
@@ -507,7 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (delayMixKnob) {
         delayMixKnob.addEventListener('input', () => {
             const value = parseFloat(delayMixKnob.value);
-            delayValue.textContent = Math.round(value) + '%';
+            if (delayValue) delayValue.textContent = Math.round(value) + '%';
             if (delaySlider) delaySlider.value = value;
             updateFxEffect(delay, value, isDelayActive);
             updateKnobIndicator(delayMixKnob, delayIndicator);
@@ -517,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (delaySlider) {
         delaySlider.addEventListener('input', () => {
             const value = parseFloat(delaySlider.value);
-            delayValue.textContent = Math.round(value) + '%';
+            if (delayValue) delayValue.textContent = Math.round(value) + '%';
             if (delayMixKnob) delayMixKnob.value = value;
             updateFxEffect(delay, value, isDelayActive);
             updateKnobIndicator(delayMixKnob, delayIndicator);
@@ -528,7 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
         delayLed.addEventListener('click', () => {
             isDelayActive = !isDelayActive;
             delayLed.classList.toggle('active', isDelayActive);
-            const value = parseFloat(delayMixKnob.value);
+            const value = parseFloat(delayMixKnob?.value || 0);
             updateFxEffect(delay, value, isDelayActive);
         });
     }
@@ -537,7 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (chorusMixKnob) {
         chorusMixKnob.addEventListener('input', () => {
             const value = parseFloat(chorusMixKnob.value);
-            chorusValue.textContent = Math.round(value) + '%';
+            if (chorusValue) chorusValue.textContent = Math.round(value) + '%';
             if (chorusSlider) chorusSlider.value = value;
             updateFxEffect(chorus, value, isChorusActive);
             updateKnobIndicator(chorusMixKnob, chorusIndicator);
@@ -547,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (chorusSlider) {
         chorusSlider.addEventListener('input', () => {
             const value = parseFloat(chorusSlider.value);
-            chorusValue.textContent = Math.round(value) + '%';
+            if (chorusValue) chorusValue.textContent = Math.round(value) + '%';
             if (chorusMixKnob) chorusMixKnob.value = value;
             updateFxEffect(chorus, value, isChorusActive);
             updateKnobIndicator(chorusMixKnob, chorusIndicator);
@@ -558,7 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chorusLed.addEventListener('click', () => {
             isChorusActive = !isChorusActive;
             chorusLed.classList.toggle('active', isChorusActive);
-            const value = parseFloat(chorusMixKnob.value);
+            const value = parseFloat(chorusMixKnob?.value || 0);
             updateFxEffect(chorus, value, isChorusActive);
         });
     }
@@ -566,7 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (distortionMixKnob) {
         distortionMixKnob.addEventListener('input', () => {
             const value = parseFloat(distortionMixKnob.value);
-            distortionValue.textContent = Math.round(value) + '%';
+            if (distortionValue) distortionValue.textContent = Math.round(value) + '%';
             if (distortionSlider) distortionSlider.value = value;
             updateFxEffect(distortion, value, isDistortionActive);
             updateKnobIndicator(distortionMixKnob, distortionIndicator);
@@ -576,7 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (distortionSlider) {
         distortionSlider.addEventListener('input', () => {
             const value = parseFloat(distortionSlider.value);
-            distortionValue.textContent = Math.round(value) + '%';
+            if (distortionValue) distortionValue.textContent = Math.round(value) + '%';
             if (distortionMixKnob) distortionMixKnob.value = value;
             updateFxEffect(distortion, value, isDistortionActive);
             updateKnobIndicator(distortionMixKnob, distortionIndicator);
@@ -587,7 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
         distortionLed.addEventListener('click', () => {
             isDistortionActive = !isDistortionActive;
             distortionLed.classList.toggle('active', isDistortionActive);
-            const value = parseFloat(distortionMixKnob.value);
+            const value = parseFloat(distortionMixKnob?.value || 0);
             updateFxEffect(distortion, value, isDistortionActive);
         });
     }
@@ -596,7 +597,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (masterDbSlider) {
         masterDbSlider.addEventListener('input', () => {
             const value = parseFloat(masterDbSlider.value);
-            masterDbValue.textContent = value.toFixed(1) + ' dB';
+            if (masterDbValue) {
+                masterDbValue.textContent = value.toFixed(1) + ' dB';
+            }
             // Apply master volume to destination
             if (typeof Tone !== 'undefined') {
                 Tone.Destination.volume.value = value;
@@ -974,6 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         depth: 0.7, 
                         wet: isChorusActive ? (parseFloat(chorusMixKnob.value) / 100) : 0
                     });
+                    offlineChorus.start();
                     const offlineDistortion = new Tone.Distortion({ 
                         distortion: 0.4, 
                         wet: isDistortionActive ? (parseFloat(distortionMixKnob.value) / 100) : 0
