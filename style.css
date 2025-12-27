@@ -957,7 +957,7 @@ body::before {
 
 .bypass-btn.active .bypass-text::after,
 .bypass-btn-small.active .bypass-text::after {
-    content: 'd';
+    content: '';
     color: var(--accent-color);
     margin-left: 2px;
 }
