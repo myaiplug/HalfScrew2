@@ -136,8 +136,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Initialize creative effects
         reverb = new Tone.Reverb({ decay: 3, wet: 0 });
-        // Generate reverb impulse response
-        reverb.generate();
+        // Generate reverb impulse response (non-blocking, ready when needed)
+        reverb.generate().then(() => {
+            console.log('Reverb impulse response ready');
+        }).catch((err) => {
+            console.warn('Reverb generation warning:', err);
+        });
         
         delay = new Tone.FeedbackDelay({ delayTime: '8n', feedback: 0.5, wet: 0 });
         chorus = new Tone.Chorus({ frequency: 1.5, delayTime: 3.5, depth: 0.7, wet: 0 });
