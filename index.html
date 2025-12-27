@@ -45,6 +45,22 @@
         <i class="fas fa-sliders-h"></i>
     </button>
 
+    <!-- Alien FX button (bottom left, above EQ button) -->
+    <button class="alien-fx-btn" id="alien-fx-btn" aria-label="Creative Effects">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Alien head -->
+            <ellipse cx="12" cy="10" rx="7" ry="9" fill="currentColor" opacity="0.9"/>
+            <!-- Large eyes -->
+            <ellipse cx="9" cy="9" rx="2.5" ry="3.5" fill="var(--bg-color)"/>
+            <ellipse cx="15" cy="9" rx="2.5" ry="3.5" fill="var(--bg-color)"/>
+            <!-- Small pupils -->
+            <circle cx="9" cy="9" r="1" fill="currentColor"/>
+            <circle cx="15" cy="9" r="1" fill="currentColor"/>
+            <!-- Mouth/detail -->
+            <path d="M 12 14 Q 10 15 8 14" stroke="var(--bg-color)" stroke-width="1" fill="none"/>
+        </svg>
+    </button>
+
     <!-- Top right settings button -->
     <button class="settings-btn" id="settings-btn" aria-label="Settings">
         <i class="fas fa-chevron-left"></i>
@@ -162,6 +178,9 @@
 
     <!-- EQ Panel (slide-out from left) -->
     <div id="eq-panel" class="side-panel left-panel" style="display: none;">
+        <button class="panel-close-btn" id="eq-panel-close" aria-label="Close EQ Panel">
+            <i class="fas fa-chevron-left"></i>
+        </button>
         <div class="panel-content eq-panel-content">
             <h2>EQ & Visualizer</h2>
             <div class="eq-content">
@@ -218,6 +237,9 @@
 
     <!-- Settings Panel (slide-out from right) -->
     <div id="settings-panel" class="side-panel right-panel" style="display: none;">
+        <button class="panel-close-btn" id="settings-panel-close" aria-label="Close Settings Panel">
+            <i class="fas fa-chevron-right"></i>
+        </button>
         <div class="panel-content">
             <h2>Settings</h2>
             <div class="settings-content">
@@ -234,6 +256,66 @@
                     <button id="download-button" disabled>
                         <i class="fas fa-download"></i> Download
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Creative Effects Panel (slide-up from bottom) -->
+    <div id="fx-panel" class="fx-panel" style="display: none;">
+        <button class="panel-close-btn fx-close-btn" id="fx-panel-close" aria-label="Close FX Panel">
+            <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="fx-panel-content">
+            <h2>CREATIVE FX</h2>
+            <p class="fx-subtitle">Chopped & Screwed Sound Design</p>
+            <div class="fx-controls">
+                <!-- Reverb -->
+                <div class="fx-control">
+                    <div class="fx-knob-container">
+                        <div class="knob-wrapper fx-knob-wrapper">
+                            <input type="range" id="reverb-mix" class="input-knob fx-knob" min="0" max="100" value="0" step="1" data-diameter="70">
+                            <div class="knob-indicator"></div>
+                        </div>
+                    </div>
+                    <label for="reverb-mix">REVERB</label>
+                    <span class="fx-value" id="reverb-value">0%</span>
+                </div>
+                
+                <!-- Delay -->
+                <div class="fx-control">
+                    <div class="fx-knob-container">
+                        <div class="knob-wrapper fx-knob-wrapper">
+                            <input type="range" id="delay-mix" class="input-knob fx-knob" min="0" max="100" value="0" step="1" data-diameter="70">
+                            <div class="knob-indicator"></div>
+                        </div>
+                    </div>
+                    <label for="delay-mix">DELAY</label>
+                    <span class="fx-value" id="delay-value">0%</span>
+                </div>
+                
+                <!-- Chorus -->
+                <div class="fx-control">
+                    <div class="fx-knob-container">
+                        <div class="knob-wrapper fx-knob-wrapper">
+                            <input type="range" id="chorus-mix" class="input-knob fx-knob" min="0" max="100" value="0" step="1" data-diameter="70">
+                            <div class="knob-indicator"></div>
+                        </div>
+                    </div>
+                    <label for="chorus-mix">CHORUS</label>
+                    <span class="fx-value" id="chorus-value">0%</span>
+                </div>
+                
+                <!-- Distortion -->
+                <div class="fx-control">
+                    <div class="fx-knob-container">
+                        <div class="knob-wrapper fx-knob-wrapper">
+                            <input type="range" id="distortion-mix" class="input-knob fx-knob" min="0" max="100" value="0" step="1" data-diameter="70">
+                            <div class="knob-indicator"></div>
+                        </div>
+                    </div>
+                    <label for="distortion-mix">DISTORTION</label>
+                    <span class="fx-value" id="distortion-value">0%</span>
                 </div>
             </div>
         </div>

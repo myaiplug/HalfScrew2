@@ -1086,3 +1086,229 @@ body::before {
         opacity: 0;
     }
 }
+
+/* Panel close buttons */
+.panel-close-btn {
+    position: absolute;
+    top: 20px;
+    background: var(--accent-color);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white;
+    font-size: 16px;
+    z-index: 1001;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.left-panel .panel-close-btn {
+    right: 20px;
+}
+
+.right-panel .panel-close-btn {
+    left: 20px;
+}
+
+.panel-close-btn:hover {
+    transform: scale(1.1);
+    background: var(--accent-secondary);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.panel-close-btn:active {
+    transform: scale(0.95);
+}
+
+/* Alien FX Button */
+.alien-fx-btn {
+    position: fixed;
+    bottom: 80px;
+    left: 30px;
+    background: var(--panel-bg);
+    border: none;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--accent-color);
+    font-size: 20px;
+    z-index: 100;
+    transition: all 0.3s ease;
+    box-shadow: 
+        0 4px 6px var(--panel-shadow), 
+        0 2px 4px rgba(0, 0, 0, 0.06),
+        4px 4px 8px var(--knob-shadow-1),
+        -2px -2px 6px var(--knob-shadow-2);
+}
+
+.alien-fx-btn:hover {
+    transform: scale(1.05) rotate(5deg);
+    box-shadow: 
+        0 6px 12px var(--panel-shadow), 
+        0 3px 6px rgba(0, 0, 0, 0.1),
+        6px 6px 12px var(--knob-shadow-1),
+        -3px -3px 8px var(--knob-shadow-2);
+    color: var(--accent-secondary);
+}
+
+.alien-fx-btn.active {
+    transform: scale(1.05);
+    color: var(--accent-secondary);
+}
+
+/* Creative FX Panel */
+.fx-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--panel-bg);
+    padding: 30px 40px 40px;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.15);
+    z-index: 999;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.fx-panel.active {
+    transform: translateY(0);
+}
+
+.fx-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 50%;
+    transform: translateX(50%);
+    background: var(--accent-color);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white;
+    font-size: 16px;
+    z-index: 1001;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.fx-close-btn:hover {
+    transform: translateX(50%) scale(1.1);
+    background: var(--accent-secondary);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.fx-panel-content h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 5px;
+    text-align: center;
+    color: var(--text-color);
+    letter-spacing: 2px;
+}
+
+.fx-subtitle {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 30px;
+    font-weight: 500;
+    letter-spacing: 1px;
+}
+
+.fx-controls {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.fx-control {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 100px;
+    max-width: 150px;
+}
+
+.fx-knob-container {
+    position: relative;
+    width: 70px;
+    height: 70px;
+}
+
+.fx-knob-wrapper {
+    width: 100%;
+    height: 100%;
+}
+
+.fx-control label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-color);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.fx-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-color);
+}
+
+/* Mobile responsive for FX panel */
+@media (max-width: 768px) {
+    .alien-fx-btn {
+        bottom: 70px;
+        left: 20px;
+        width: 40px;
+        height: 40px;
+    }
+    
+    .fx-panel {
+        padding: 25px 20px 30px;
+        max-height: 60vh;
+    }
+    
+    .fx-controls {
+        gap: 20px;
+    }
+    
+    .fx-control {
+        min-width: 80px;
+        max-width: 120px;
+    }
+    
+    .fx-knob-container {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+@media (max-width: 480px) {
+    .alien-fx-btn {
+        bottom: 60px;
+        left: 15px;
+    }
+    
+    .fx-controls {
+        gap: 15px;
+    }
+}
