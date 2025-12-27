@@ -40,12 +40,7 @@
         </svg>
     </div>
 
-    <!-- EQ button (bottom left) -->
-    <button class="eq-btn" id="eq-btn" aria-label="EQ Controls">
-        <i class="fas fa-sliders-h"></i>
-    </button>
-
-    <!-- Alien FX button (bottom left, above EQ button) -->
+    <!-- Alien FX button (bottom left) -->
     <button class="alien-fx-btn" id="alien-fx-btn" aria-label="Creative Effects">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <!-- Alien head -->
@@ -163,6 +158,11 @@
                 </div>
             </div>
         </div>
+        
+        <!-- EQ button (moved inside interface at bottom left corner with knobs) -->
+        <button class="eq-btn-inline" id="eq-btn" aria-label="EQ Controls">
+            <i class="fas fa-sliders-h"></i>
+        </button>
     </div>
 
     <!-- Bottom tagline -->
@@ -182,7 +182,12 @@
             <i class="fas fa-chevron-left"></i>
         </button>
         <div class="panel-content eq-panel-content">
-            <h2>EQ & Visualizer</h2>
+            <div class="eq-header">
+                <h2>EQ & Visualizer</h2>
+                <button class="bypass-btn-small" id="eq-bypass-btn">
+                    <span class="bypass-text">Bypass</span>
+                </button>
+            </div>
             <div class="eq-content">
                 <div class="eq-band">
                     <div class="knob-container eq-knob-container">
@@ -226,9 +231,11 @@
                 <input type="range" id="wet-dry-mix" min="0" max="1" value="0.5" step="0.01">
                 <span id="wet-dry-value">50%</span>
             </div>
-            <button class="bypass-btn" id="eq-bypass-btn">
-                <span class="bypass-text">Bypass</span>
-            </button>
+            <div class="eq-master-db-section">
+                <label for="master-db">Master dB</label>
+                <input type="range" id="master-db" class="horizontal-slider" min="-20" max="20" value="0" step="0.5">
+                <span id="master-db-value">0 dB</span>
+            </div>
         </div>
     </div>
 
@@ -240,13 +247,6 @@
         <div class="panel-content">
             <h2>Audio Mixer</h2>
             <div class="settings-content">
-                <div class="mixer-controls-row">
-                    <div class="mixer-control">
-                        <label for="master-db">Master dB</label>
-                        <input type="range" id="master-db" class="vertical-slider" min="-20" max="20" value="0" step="0.5" orient="vertical">
-                        <span id="master-db-value">0 dB</span>
-                    </div>
-                </div>
                 <div class="modal-buttons">
                     <button id="play-button" disabled>
                         <i class="fas fa-play"></i> Play

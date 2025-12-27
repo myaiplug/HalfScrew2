@@ -105,15 +105,16 @@ body::before {
 }
 
 /* EQ button (bottom left) */
-.eq-btn {
-    position: fixed;
-    bottom: 30px;
-    left: 30px;
+/* EQ button inline (inside main interface at bottom left) */
+.eq-btn-inline {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
     background: var(--panel-bg);
     border: none;
     border-radius: 50%;
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -125,10 +126,10 @@ body::before {
         -2px -2px 6px var(--knob-shadow-2);
     transition: all 0.3s ease;
     color: var(--text-color);
-    z-index: 100;
+    z-index: 50;
 }
 
-.eq-btn:hover {
+.eq-btn-inline:hover {
     transform: scale(1.05);
     box-shadow: 
         0 6px 12px var(--panel-shadow), 
@@ -138,12 +139,12 @@ body::before {
     color: var(--accent-color);
 }
 
-.eq-btn i {
-    font-size: 14px;
+.eq-btn-inline i {
+    font-size: 16px;
 }
 
-.eq-btn.active i {
-    transform: scaleX(-1);
+.eq-btn-inline.active {
+    color: var(--accent-color);
 }
 
 /* Settings button (top right - Audio Mixer) */
@@ -223,6 +224,8 @@ body::before {
     width: 100%;
     margin: 0 auto;
     padding: 20px 15px;
+    position: relative;
+    z-index: 2;
 }
 
 /* Player Toolbar */
@@ -575,19 +578,19 @@ body::before {
     width: 350px;
     background: var(--panel-bg);
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.3);
-    z-index: 999;
+    z-index: 1;
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     overflow-y: auto;
 }
 
 .left-panel {
-    left: 0;
-    transform: translateX(-100%);
+    left: 50%;
+    transform: translate(-50%, 0) translateX(-500px);
     border-radius: 0 28px 28px 0;
 }
 
 .left-panel.active {
-    transform: translateX(0);
+    transform: translate(-50%, 0) translateX(calc(-50% + 375px + 175px));
 }
 
 .right-panel {
@@ -618,6 +621,17 @@ body::before {
 .eq-panel-content {
     max-height: 100vh;
     overflow-y: auto;
+}
+
+.eq-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.eq-header h2 {
+    margin: 0;
 }
 
 .eq-content {
@@ -846,6 +860,60 @@ body::before {
     text-align: center;
 }
 
+/* EQ Master dB Section */
+.eq-master-db-section {
+    margin-top: 15px;
+    padding: 15px;
+    background: var(--bg-color);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.eq-master-db-section label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.eq-master-db-section input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--marker-color);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.eq-master-db-section input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.eq-master-db-section input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.eq-master-db-section span {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent-color);
+    text-align: center;
+}
+
 .bypass-btn {
     width: 100%;
     padding: 14px;
@@ -860,21 +928,38 @@ body::before {
     margin-top: 15px;
 }
 
-.bypass-btn:hover {
+.bypass-btn-small {
+    padding: 8px 16px;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+
+.bypass-btn:hover,
+.bypass-btn-small:hover {
     background: var(--accent-secondary);
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
-.bypass-btn.active {
+.bypass-btn.active,
+.bypass-btn-small.active {
     background: var(--bg-color);
     color: var(--text-secondary);
     border: 2px solid var(--accent-color);
 }
 
-.bypass-btn.active .bypass-text::after {
-    content: ' (Bypassed)';
+.bypass-btn.active .bypass-text::after,
+.bypass-btn-small.active .bypass-text::after {
+    content: 'd';
     color: var(--accent-color);
+    margin-left: 2px;
 }
 
 /* Settings content */
