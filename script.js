@@ -73,8 +73,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const distortionLed = document.getElementById('distortion-led');
     
     // Mixer controls
-    const fxDryWetSlider = document.getElementById('fx-dry-wet');
-    const fxDryWetValue = document.getElementById('fx-dry-wet-value');
     const masterDbSlider = document.getElementById('master-db');
     const masterDbValue = document.getElementById('master-db-value');
     
@@ -595,30 +593,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Mixer controls
-    if (fxDryWetSlider) {
-        fxDryWetSlider.addEventListener('input', () => {
-            const value = parseFloat(fxDryWetSlider.value);
-            fxDryWetValue.textContent = Math.round(value) + '%';
-            // This would control overall FX dry/wet mix if needed in future
-        });
-    }
-
     if (masterDbSlider) {
         masterDbSlider.addEventListener('input', () => {
             const value = parseFloat(masterDbSlider.value);
             masterDbValue.textContent = value.toFixed(1) + ' dB';
-            // Apply master volume to limiter or destination
-            if (limiter && typeof Tone !== 'undefined') {
+            // Apply master volume to destination
+            if (typeof Tone !== 'undefined') {
                 Tone.Destination.volume.value = value;
             }
         });
     }
 
-    // Initialize FX knob indicators
+    // Initialize FX knob indicators and sync sliders
     updateKnobIndicator(reverbMixKnob, reverbIndicator);
     updateKnobIndicator(delayMixKnob, delayIndicator);
     updateKnobIndicator(chorusMixKnob, chorusIndicator);
     updateKnobIndicator(distortionMixKnob, distortionIndicator);
+    
+    // Initialize FX slider values to match knobs
+    if (reverbSlider && reverbMixKnob) reverbSlider.value = reverbMixKnob.value;
+    if (delaySlider && delayMixKnob) delaySlider.value = delayMixKnob.value;
+    if (chorusSlider && chorusMixKnob) chorusSlider.value = chorusMixKnob.value;
+    if (distortionSlider && distortionMixKnob) distortionSlider.value = distortionMixKnob.value;
 
     // Setup audio analyser for visualizer
     function setupAnalyser() {
