@@ -115,8 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let delay;
     let chorus;
     let distortion;
-    let fxDryGain;
-    let fxWetGain;
     
     const smoothingTime = 0.05;
 
@@ -138,6 +136,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Initialize creative effects
         reverb = new Tone.Reverb({ decay: 3, wet: 0 });
+        // Generate reverb impulse response
+        reverb.generate();
+        
         delay = new Tone.FeedbackDelay({ delayTime: '8n', feedback: 0.5, wet: 0 });
         chorus = new Tone.Chorus({ frequency: 1.5, delayTime: 3.5, depth: 0.7, wet: 0 });
         distortion = new Tone.Distortion({ distortion: 0.4, wet: 0 });
@@ -834,6 +835,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         decay: 3, 
                         wet: parseFloat(reverbMixKnob.value) / 100 
                     });
+                    
+                    // Wait for reverb to generate its impulse response
+                    await offlineReverb.generate();
+                    
                     const offlineDelay = new Tone.FeedbackDelay({ 
                         delayTime: '8n', 
                         feedback: 0.5, 
