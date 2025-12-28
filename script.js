@@ -14,9 +14,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Panels (replacing modals)
     const settingsBtn = document.getElementById('settings-btn');
     const settingsPanel = document.getElementById('settings-panel');
+    const settingsPanelClose = document.getElementById('settings-panel-close');
     const eqBtn = document.getElementById('eq-btn');
     const eqPanel = document.getElementById('eq-panel');
+    const eqPanelClose = document.getElementById('eq-panel-close');
     const eqBypassBtn = document.getElementById('eq-bypass-btn');
+    
+    // FX Panel
+    const alienFxBtn = document.getElementById('alien-fx-btn');
+    const fxPanel = document.getElementById('fx-panel');
+    const fxPanelClose = document.getElementById('fx-panel-close');
     
     // Toolbar controls
     const fileInput = document.getElementById('file-input');
@@ -47,6 +54,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const midVisualizer = document.getElementById('mid-visualizer');
     const highVisualizer = document.getElementById('high-visualizer');
     
+    // FX controls
+    const reverbMixKnob = document.getElementById('reverb-mix');
+    const reverbValue = document.getElementById('reverb-value');
+    const reverbSlider = document.getElementById('reverb-slider');
+    const reverbLed = document.getElementById('reverb-led');
+    const delayMixKnob = document.getElementById('delay-mix');
+    const delayValue = document.getElementById('delay-value');
+    const delaySlider = document.getElementById('delay-slider');
+    const delayLed = document.getElementById('delay-led');
+    const chorusMixKnob = document.getElementById('chorus-mix');
+    const chorusValue = document.getElementById('chorus-value');
+    const chorusSlider = document.getElementById('chorus-slider');
+    const chorusLed = document.getElementById('chorus-led');
+    const distortionMixKnob = document.getElementById('distortion-mix');
+    const distortionValue = document.getElementById('distortion-value');
+    const distortionSlider = document.getElementById('distortion-slider');
+    const distortionLed = document.getElementById('distortion-led');
+    
+    // Mixer controls
+    const masterDbSlider = document.getElementById('master-db');
+    const masterDbValue = document.getElementById('master-db-value');
+    
     // Cassette icon
     const cassetteIcon = document.getElementById('cassette-icon');
     
@@ -54,6 +83,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let isPlaying = false;
     let isRepeatOn = false;
     let isEqBypassed = false;
+    
+    // FX LED states
+    let isReverbActive = false;
+    let isDelayActive = false;
+    let isChorusActive = false;
+    let isDistortionActive = false;
     
     // Visualizer state
     let lowEnergy = 0;
@@ -93,6 +128,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let lowShelf;
     let limiter;
     
+    // Creative FX
+    let reverb;
+    let delay;
+    let chorus;
+    let distortion;
+    
     const smoothingTime = 0.05;
 
     // Check if Tone.js is available
@@ -111,12 +152,30 @@ document.addEventListener('DOMContentLoaded', () => {
             highFrequency: 2500
         });
         
+        // Initialize creative effects
+        reverb = new Tone.Reverb({ decay: 3, wet: 0 });
+        // Generate reverb impulse response (non-blocking, ready when needed)
+        reverb.generate().then(() => {
+            console.log('Reverb impulse response ready');
+        }).catch((err) => {
+            console.warn('Reverb generation warning:', err);
+        });
+        
+        delay = new Tone.FeedbackDelay({ delayTime: '8n', feedback: 0.5, wet: 0 });
+        chorus = new Tone.Chorus({ frequency: 1.5, delayTime: 3.5, depth: 0.7, wet: 0 });
+        chorus.start();
+        distortion = new Tone.Distortion({ distortion: 0.4, wet: 0 });
+        
         // Use less aggressive limiter threshold to prevent distortion
         limiter = new Tone.Limiter(-0.1);
         
-        // Audio chain
+        // Audio chain: pitchShift -> lowShelf -> FX chain -> limiter -> destination
         pitchShift.connect(lowShelf);
-        lowShelf.connect(limiter);
+        lowShelf.connect(reverb);
+        reverb.connect(delay);
+        delay.connect(chorus);
+        chorus.connect(distortion);
+        distortion.connect(limiter);
         limiter.toDestination();
         
         wetDry = new Tone.Gain(0.5).connect(pitchShift);
@@ -242,6 +301,63 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Panel close buttons
+    if (eqPanelClose) {
+        eqPanelClose.addEventListener('click', () => {
+            eqPanel.classList.remove('active');
+            eqBtn.classList.remove('active');
+            setTimeout(() => {
+                if (!eqPanel.classList.contains('active')) {
+                    eqPanel.style.display = 'none';
+                }
+            }, 400);
+        });
+    }
+
+    if (settingsPanelClose) {
+        settingsPanelClose.addEventListener('click', () => {
+            settingsPanel.classList.remove('active');
+            settingsBtn.classList.remove('active');
+            setTimeout(() => {
+                if (!settingsPanel.classList.contains('active')) {
+                    settingsPanel.style.display = 'none';
+                }
+            }, 400);
+        });
+    }
+
+    // Alien FX Panel
+    alienFxBtn.addEventListener('click', () => {
+        const isActive = fxPanel.classList.contains('active');
+        if (isActive) {
+            fxPanel.classList.remove('active');
+            alienFxBtn.classList.remove('active');
+            setTimeout(() => {
+                if (!fxPanel.classList.contains('active')) {
+                    fxPanel.style.display = 'none';
+                }
+            }, 400);
+        } else {
+            fxPanel.style.display = 'block';
+            setTimeout(() => {
+                fxPanel.classList.add('active');
+                alienFxBtn.classList.add('active');
+            }, 10);
+        }
+    });
+
+    if (fxPanelClose) {
+        fxPanelClose.addEventListener('click', () => {
+            fxPanel.classList.remove('active');
+            alienFxBtn.classList.remove('active');
+            setTimeout(() => {
+                if (!fxPanel.classList.contains('active')) {
+                    fxPanel.style.display = 'none';
+                }
+            }, 400);
+        });
+    }
+
     // Knob visualization update
     function updateKnobIndicator(knob, indicator) {
         if (!knob || !indicator) return;
@@ -342,6 +458,166 @@ document.addEventListener('DOMContentLoaded', () => {
     updateKnobIndicator(lowEqKnob, lowEqIndicator);
     updateKnobIndicator(midEqKnob, midEqIndicator);
     updateKnobIndicator(highEqKnob, highEqIndicator);
+
+    // FX Controls
+    const reverbIndicator = reverbMixKnob?.closest('.fx-knob-wrapper')?.querySelector('.knob-indicator');
+    const delayIndicator = delayMixKnob?.closest('.fx-knob-wrapper')?.querySelector('.knob-indicator');
+    const chorusIndicator = chorusMixKnob?.closest('.fx-knob-wrapper')?.querySelector('.knob-indicator');
+    const distortionIndicator = distortionMixKnob?.closest('.fx-knob-wrapper')?.querySelector('.knob-indicator');
+
+    // Helper function to update FX based on LED state
+    function updateFxEffect(effect, value, isActive) {
+        if (effect && isActive) {
+            effect.wet.value = value / 100;
+        } else if (effect) {
+            effect.wet.value = 0;
+        }
+    }
+
+    // Reverb controls
+    if (reverbMixKnob) {
+        reverbMixKnob.addEventListener('input', () => {
+            const value = parseFloat(reverbMixKnob.value);
+            if (reverbValue) reverbValue.textContent = Math.round(value) + '%';
+            if (reverbSlider) reverbSlider.value = value;
+            updateFxEffect(reverb, value, isReverbActive);
+            updateKnobIndicator(reverbMixKnob, reverbIndicator);
+        });
+    }
+
+    if (reverbSlider) {
+        reverbSlider.addEventListener('input', () => {
+            const value = parseFloat(reverbSlider.value);
+            if (reverbValue) reverbValue.textContent = Math.round(value) + '%';
+            if (reverbMixKnob) reverbMixKnob.value = value;
+            updateFxEffect(reverb, value, isReverbActive);
+            updateKnobIndicator(reverbMixKnob, reverbIndicator);
+        });
+    }
+
+    if (reverbLed) {
+        reverbLed.addEventListener('click', () => {
+            isReverbActive = !isReverbActive;
+            reverbLed.classList.toggle('active', isReverbActive);
+            const value = parseFloat(reverbMixKnob?.value || 0);
+            updateFxEffect(reverb, value, isReverbActive);
+        });
+    }
+
+    // Delay controls
+    if (delayMixKnob) {
+        delayMixKnob.addEventListener('input', () => {
+            const value = parseFloat(delayMixKnob.value);
+            if (delayValue) delayValue.textContent = Math.round(value) + '%';
+            if (delaySlider) delaySlider.value = value;
+            updateFxEffect(delay, value, isDelayActive);
+            updateKnobIndicator(delayMixKnob, delayIndicator);
+        });
+    }
+
+    if (delaySlider) {
+        delaySlider.addEventListener('input', () => {
+            const value = parseFloat(delaySlider.value);
+            if (delayValue) delayValue.textContent = Math.round(value) + '%';
+            if (delayMixKnob) delayMixKnob.value = value;
+            updateFxEffect(delay, value, isDelayActive);
+            updateKnobIndicator(delayMixKnob, delayIndicator);
+        });
+    }
+
+    if (delayLed) {
+        delayLed.addEventListener('click', () => {
+            isDelayActive = !isDelayActive;
+            delayLed.classList.toggle('active', isDelayActive);
+            const value = parseFloat(delayMixKnob?.value || 0);
+            updateFxEffect(delay, value, isDelayActive);
+        });
+    }
+
+    // Chorus controls
+    if (chorusMixKnob) {
+        chorusMixKnob.addEventListener('input', () => {
+            const value = parseFloat(chorusMixKnob.value);
+            if (chorusValue) chorusValue.textContent = Math.round(value) + '%';
+            if (chorusSlider) chorusSlider.value = value;
+            updateFxEffect(chorus, value, isChorusActive);
+            updateKnobIndicator(chorusMixKnob, chorusIndicator);
+        });
+    }
+
+    if (chorusSlider) {
+        chorusSlider.addEventListener('input', () => {
+            const value = parseFloat(chorusSlider.value);
+            if (chorusValue) chorusValue.textContent = Math.round(value) + '%';
+            if (chorusMixKnob) chorusMixKnob.value = value;
+            updateFxEffect(chorus, value, isChorusActive);
+            updateKnobIndicator(chorusMixKnob, chorusIndicator);
+        });
+    }
+
+    if (chorusLed) {
+        chorusLed.addEventListener('click', () => {
+            isChorusActive = !isChorusActive;
+            chorusLed.classList.toggle('active', isChorusActive);
+            const value = parseFloat(chorusMixKnob?.value || 0);
+            updateFxEffect(chorus, value, isChorusActive);
+        });
+    }
+
+    if (distortionMixKnob) {
+        distortionMixKnob.addEventListener('input', () => {
+            const value = parseFloat(distortionMixKnob.value);
+            if (distortionValue) distortionValue.textContent = Math.round(value) + '%';
+            if (distortionSlider) distortionSlider.value = value;
+            updateFxEffect(distortion, value, isDistortionActive);
+            updateKnobIndicator(distortionMixKnob, distortionIndicator);
+        });
+    }
+
+    if (distortionSlider) {
+        distortionSlider.addEventListener('input', () => {
+            const value = parseFloat(distortionSlider.value);
+            if (distortionValue) distortionValue.textContent = Math.round(value) + '%';
+            if (distortionMixKnob) distortionMixKnob.value = value;
+            updateFxEffect(distortion, value, isDistortionActive);
+            updateKnobIndicator(distortionMixKnob, distortionIndicator);
+        });
+    }
+
+    if (distortionLed) {
+        distortionLed.addEventListener('click', () => {
+            isDistortionActive = !isDistortionActive;
+            distortionLed.classList.toggle('active', isDistortionActive);
+            const value = parseFloat(distortionMixKnob?.value || 0);
+            updateFxEffect(distortion, value, isDistortionActive);
+        });
+    }
+
+    // Mixer controls
+    if (masterDbSlider) {
+        masterDbSlider.addEventListener('input', () => {
+            const value = parseFloat(masterDbSlider.value);
+            if (masterDbValue) {
+                masterDbValue.textContent = value.toFixed(1) + ' dB';
+            }
+            // Apply master volume to destination
+            if (typeof Tone !== 'undefined') {
+                Tone.Destination.volume.value = value;
+            }
+        });
+    }
+
+    // Initialize FX knob indicators and sync sliders
+    updateKnobIndicator(reverbMixKnob, reverbIndicator);
+    updateKnobIndicator(delayMixKnob, delayIndicator);
+    updateKnobIndicator(chorusMixKnob, chorusIndicator);
+    updateKnobIndicator(distortionMixKnob, distortionIndicator);
+    
+    // Initialize FX slider values to match knobs
+    if (reverbSlider && reverbMixKnob) reverbSlider.value = reverbMixKnob.value;
+    if (delaySlider && delayMixKnob) delaySlider.value = delayMixKnob.value;
+    if (chorusSlider && chorusMixKnob) chorusSlider.value = chorusMixKnob.value;
+    if (distortionSlider && distortionMixKnob) distortionSlider.value = distortionMixKnob.value;
 
     // Setup audio analyser for visualizer
     function setupAnalyser() {
@@ -660,9 +936,12 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 // Step 1: Render audio
                 const startTime = performance.now();
+                const playbackRate = parseFloat(speedKnob.value) / 100;
+                // Adjust rendering duration based on playback rate
+                const renderDuration = player.buffer.duration / playbackRate;
+                
                 const buffer = await Tone.Offline(async (offline) => {
                     const offlinePlayer = new Tone.Player(player.buffer);
-                    const playbackRate = parseFloat(speedKnob.value) / 100;
                     offlinePlayer.playbackRate = playbackRate;
 
                     const timeStretchPitchCorrection = -12 * Math.log2(playbackRate);
@@ -677,11 +956,43 @@ document.addEventListener('DOMContentLoaded', () => {
                         lowFrequency: 400,
                         highFrequency: 2500
                     });
+                    
+                    // Creative FX - only apply if LED is active
+                    const offlineReverb = new Tone.Reverb({ 
+                        decay: 3, 
+                        wet: isReverbActive ? (parseFloat(reverbMixKnob.value) / 100) : 0
+                    });
+                    
+                    // Wait for reverb to generate its impulse response
+                    await offlineReverb.generate();
+                    
+                    const offlineDelay = new Tone.FeedbackDelay({ 
+                        delayTime: '8n', 
+                        feedback: 0.5, 
+                        wet: isDelayActive ? (parseFloat(delayMixKnob.value) / 100) : 0
+                    });
+                    const offlineChorus = new Tone.Chorus({ 
+                        frequency: 1.5, 
+                        delayTime: 3.5, 
+                        depth: 0.7, 
+                        wet: isChorusActive ? (parseFloat(chorusMixKnob.value) / 100) : 0
+                    });
+                    offlineChorus.start();
+                    const offlineDistortion = new Tone.Distortion({ 
+                        distortion: 0.4, 
+                        wet: isDistortionActive ? (parseFloat(distortionMixKnob.value) / 100) : 0
+                    });
+                    
                     // Use less aggressive limiter threshold to prevent distortion
                     const offlineLimiter = new Tone.Limiter(-0.1);
 
+                    // Build the audio chain
                     offlinePitchShift.connect(offlineEQ);
-                    offlineEQ.connect(offlineLimiter);
+                    offlineEQ.connect(offlineReverb);
+                    offlineReverb.connect(offlineDelay);
+                    offlineDelay.connect(offlineChorus);
+                    offlineChorus.connect(offlineDistortion);
+                    offlineDistortion.connect(offlineLimiter);
                     offlineLimiter.connect(offline.destination);
 
                     const offlineWetGain = new Tone.Gain(parseFloat(wetDryMixSlider.value)).connect(offlinePitchShift);
@@ -690,7 +1001,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     offlinePlayer.connect(offlineDryGain);
                     offlinePlayer.connect(offlineWetGain);
                     offlinePlayer.start(0);
-                }, player.buffer.duration);
+                }, renderDuration);
                 
                 // Step 2: Encode to MP3
                 downloadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Encoding...';

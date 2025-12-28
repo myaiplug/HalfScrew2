@@ -40,14 +40,25 @@
         </svg>
     </div>
 
-    <!-- EQ button (bottom left) -->
-    <button class="eq-btn" id="eq-btn" aria-label="EQ Controls">
-        <i class="fas fa-sliders-h"></i>
+    <!-- Alien FX button (bottom left) -->
+    <button class="alien-fx-btn" id="alien-fx-btn" aria-label="Creative Effects">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Alien head -->
+            <ellipse cx="12" cy="10" rx="7" ry="9" fill="currentColor" opacity="0.9"/>
+            <!-- Large eyes -->
+            <ellipse cx="9" cy="9" rx="2.5" ry="3.5" fill="var(--bg-color)"/>
+            <ellipse cx="15" cy="9" rx="2.5" ry="3.5" fill="var(--bg-color)"/>
+            <!-- Small pupils -->
+            <circle cx="9" cy="9" r="1" fill="currentColor"/>
+            <circle cx="15" cy="9" r="1" fill="currentColor"/>
+            <!-- Mouth/detail -->
+            <path d="M 12 14 Q 10 15 8 14" stroke="var(--bg-color)" stroke-width="1" fill="none"/>
+        </svg>
     </button>
 
-    <!-- Top right settings button -->
-    <button class="settings-btn" id="settings-btn" aria-label="Settings">
-        <i class="fas fa-chevron-left"></i>
+    <!-- Top right settings button (Audio Mixer) -->
+    <button class="settings-btn" id="settings-btn" aria-label="Audio Mixer">
+        <i class="fas fa-sliders-h"></i>
     </button>
 
     <!-- Theme toggle button (bottom right) -->
@@ -146,6 +157,11 @@
                     <div class="label-value" id="pitch-value">0.0 st</div>
                 </div>
             </div>
+            
+            <!-- EQ button (inside control panel at bottom left corner) -->
+            <button class="eq-btn-inline" id="eq-btn" aria-label="EQ Controls">
+                <i class="fas fa-sliders-h"></i>
+            </button>
         </div>
     </div>
 
@@ -162,14 +178,18 @@
 
     <!-- EQ Panel (slide-out from left) -->
     <div id="eq-panel" class="side-panel left-panel" style="display: none;">
+        <button class="panel-close-btn" id="eq-panel-close" aria-label="Close EQ Panel">
+            <i class="fas fa-chevron-left"></i>
+        </button>
         <div class="panel-content eq-panel-content">
-            <h2>EQ & Visualizer</h2>
+            <div class="eq-header">
+                <h2>EQ & Visualizer</h2>
+                <button class="bypass-btn-small" id="eq-bypass-btn">
+                    <span class="bypass-text">Bypass</span>
+                </button>
+            </div>
             <div class="eq-content">
                 <div class="eq-band">
-                    <div class="eq-meter">
-                        <span class="db-value" id="low-db">0 dB</span>
-                        <div class="visualizer-bar" id="low-visualizer"></div>
-                    </div>
                     <div class="knob-container eq-knob-container">
                         <div class="knob-wrapper eq-knob-wrapper">
                             <input type="range" id="low-eq" class="input-knob eq-knob" min="-12" max="12" value="0" step="0.5" data-diameter="60">
@@ -177,12 +197,9 @@
                         </div>
                     </div>
                     <label for="low-eq">Low</label>
+                    <span class="db-value" id="low-db">0 dB</span>
                 </div>
                 <div class="eq-band">
-                    <div class="eq-meter">
-                        <span class="db-value" id="mid-db">0 dB</span>
-                        <div class="visualizer-bar" id="mid-visualizer"></div>
-                    </div>
                     <div class="knob-container eq-knob-container">
                         <div class="knob-wrapper eq-knob-wrapper">
                             <input type="range" id="mid-eq" class="input-knob eq-knob" min="-12" max="12" value="0" step="0.5" data-diameter="60">
@@ -190,12 +207,9 @@
                         </div>
                     </div>
                     <label for="mid-eq">Mid</label>
+                    <span class="db-value" id="mid-db">0 dB</span>
                 </div>
                 <div class="eq-band">
-                    <div class="eq-meter">
-                        <span class="db-value" id="high-db">0 dB</span>
-                        <div class="visualizer-bar" id="high-visualizer"></div>
-                    </div>
                     <div class="knob-container eq-knob-container">
                         <div class="knob-wrapper eq-knob-wrapper">
                             <input type="range" id="high-eq" class="input-knob eq-knob" min="-12" max="12" value="0" step="0.5" data-diameter="60">
@@ -203,30 +217,36 @@
                         </div>
                     </div>
                     <label for="high-eq">High</label>
+                    <span class="db-value" id="high-db">0 dB</span>
                 </div>
+            </div>
+            <div class="eq-lufs-section">
+                <label>
+                    <input type="checkbox" id="lufs-normalize">
+                    LUFS Normalization
+                </label>
             </div>
             <div class="eq-wet-dry-section">
                 <label for="wet-dry-mix">Wet/Dry Mix</label>
                 <input type="range" id="wet-dry-mix" min="0" max="1" value="0.5" step="0.01">
                 <span id="wet-dry-value">50%</span>
             </div>
-            <button class="bypass-btn" id="eq-bypass-btn">
-                <span class="bypass-text">Bypass</span>
-            </button>
+            <div class="eq-master-db-section">
+                <label for="master-db">Master dB</label>
+                <input type="range" id="master-db" class="horizontal-slider" min="-20" max="20" value="0" step="0.5">
+                <span id="master-db-value">0 dB</span>
+            </div>
         </div>
     </div>
 
     <!-- Settings Panel (slide-out from right) -->
     <div id="settings-panel" class="side-panel right-panel" style="display: none;">
+        <button class="panel-close-btn" id="settings-panel-close" aria-label="Close Settings Panel">
+            <i class="fas fa-chevron-right"></i>
+        </button>
         <div class="panel-content">
-            <h2>Settings</h2>
+            <h2>Audio Mixer</h2>
             <div class="settings-content">
-                <div class="setting-group">
-                    <label>
-                        <input type="checkbox" id="lufs-normalize">
-                        LUFS Normalization
-                    </label>
-                </div>
                 <div class="modal-buttons">
                     <button id="play-button" disabled>
                         <i class="fas fa-play"></i> Play
@@ -234,6 +254,82 @@
                     <button id="download-button" disabled>
                         <i class="fas fa-download"></i> Download
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Creative Effects Panel (slide-up from bottom) -->
+    <div id="fx-panel" class="fx-panel" style="display: none;">
+        <button class="panel-close-btn fx-close-btn" id="fx-panel-close" aria-label="Close FX Panel">
+            <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="fx-panel-content">
+            <h2>CREATIVE FX</h2>
+            <p class="fx-subtitle">Chopped & Screwed Sound Design</p>
+            <div class="fx-controls">
+                <!-- Reverb -->
+                <div class="fx-control">
+                    <div class="fx-knob-container">
+                        <button class="fx-led" id="reverb-led" aria-label="Toggle Reverb"></button>
+                        <div class="knob-wrapper fx-knob-wrapper">
+                            <input type="range" id="reverb-mix" class="input-knob fx-knob" min="0" max="100" value="0" step="1" data-diameter="70">
+                            <div class="knob-indicator"></div>
+                        </div>
+                    </div>
+                    <label for="reverb-mix">REVERB</label>
+                    <span class="fx-value" id="reverb-value">0%</span>
+                    <div class="fx-mix-slider-container">
+                        <input type="range" id="reverb-slider" class="fx-mix-slider" min="0" max="100" value="0" step="1">
+                    </div>
+                </div>
+                
+                <!-- Delay -->
+                <div class="fx-control">
+                    <div class="fx-knob-container">
+                        <button class="fx-led" id="delay-led" aria-label="Toggle Delay"></button>
+                        <div class="knob-wrapper fx-knob-wrapper">
+                            <input type="range" id="delay-mix" class="input-knob fx-knob" min="0" max="100" value="0" step="1" data-diameter="70">
+                            <div class="knob-indicator"></div>
+                        </div>
+                    </div>
+                    <label for="delay-mix">DELAY</label>
+                    <span class="fx-value" id="delay-value">0%</span>
+                    <div class="fx-mix-slider-container">
+                        <input type="range" id="delay-slider" class="fx-mix-slider" min="0" max="100" value="0" step="1">
+                    </div>
+                </div>
+                
+                <!-- Chorus -->
+                <div class="fx-control">
+                    <div class="fx-knob-container">
+                        <button class="fx-led" id="chorus-led" aria-label="Toggle Chorus"></button>
+                        <div class="knob-wrapper fx-knob-wrapper">
+                            <input type="range" id="chorus-mix" class="input-knob fx-knob" min="0" max="100" value="0" step="1" data-diameter="70">
+                            <div class="knob-indicator"></div>
+                        </div>
+                    </div>
+                    <label for="chorus-mix">CHORUS</label>
+                    <span class="fx-value" id="chorus-value">0%</span>
+                    <div class="fx-mix-slider-container">
+                        <input type="range" id="chorus-slider" class="fx-mix-slider" min="0" max="100" value="0" step="1">
+                    </div>
+                </div>
+                
+                <!-- Distortion -->
+                <div class="fx-control">
+                    <div class="fx-knob-container">
+                        <button class="fx-led" id="distortion-led" aria-label="Toggle Distortion"></button>
+                        <div class="knob-wrapper fx-knob-wrapper">
+                            <input type="range" id="distortion-mix" class="input-knob fx-knob" min="0" max="100" value="0" step="1" data-diameter="70">
+                            <div class="knob-indicator"></div>
+                        </div>
+                    </div>
+                    <label for="distortion-mix">DISTORTION</label>
+                    <span class="fx-value" id="distortion-value">0%</span>
+                    <div class="fx-mix-slider-container">
+                        <input type="range" id="distortion-slider" class="fx-mix-slider" min="0" max="100" value="0" step="1">
+                    </div>
                 </div>
             </div>
         </div>
